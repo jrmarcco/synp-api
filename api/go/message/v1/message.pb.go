@@ -179,7 +179,7 @@ type AckPayload struct {
 	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	// 错误信息（ 仅在 success = false 时有值 ）。
 	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	// 服务端处理时间戳（毫秒）。
+	// 服务端处理时间戳 ( 毫秒 )。
 	Timestamp     int64 `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -241,11 +241,10 @@ func (x *AckPayload) GetTimestamp() int64 {
 // 网关收到 PushMessage 后，
 // 会向前端发送 CommandType 为 COMMAND_TYPE_DOWNSTREAM 的 Message。
 type PushMessage struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// 同 Message 的 message_id ( 业务服务端 ) 生成。
-	MessageId  string `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	BizId      uint64 `protobuf:"varint,2,opt,name=biz_id,json=bizId,proto3" json:"biz_id,omitempty"`
-	ReceiverId uint64 `protobuf:"varint,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	MessageId  string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	BizId      uint64                 `protobuf:"varint,2,opt,name=biz_id,json=bizId,proto3" json:"biz_id,omitempty"`
+	ReceiverId uint64                 `protobuf:"varint,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
 	// body 的序列化类型。
 	SerializeType v1.SerializeType `protobuf:"varint,4,opt,name=serialize_type,json=serializeType,proto3,enum=common.v1.SerializeType" json:"serialize_type,omitempty"`
 	// 消息体。

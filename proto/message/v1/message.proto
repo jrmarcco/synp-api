@@ -45,7 +45,7 @@ message AckPayload {
   // 错误信息（ 仅在 success = false 时有值 ）。
   string error_message = 2;
 
-  // 服务端处理时间戳（毫秒）。
+  // 服务端处理时间戳 ( 毫秒 )。
   int64 timestamp = 3;
 }
 
@@ -54,7 +54,6 @@ message AckPayload {
 // 网关收到 PushMessage 后，
 // 会向前端发送 CommandType 为 COMMAND_TYPE_DOWNSTREAM 的 Message。
 message PushMessage {
-  // 同 Message 的 message_id ( 业务服务端 ) 生成。
   string message_id = 1;
   uint64 biz_id = 2;
   uint64 receiver_id = 3;
