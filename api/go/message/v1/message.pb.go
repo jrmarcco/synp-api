@@ -243,12 +243,11 @@ func (x *AckPayload) GetTimestamp() int64 {
 type PushMessage struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	MessageId  string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	BizId      uint64                 `protobuf:"varint,2,opt,name=biz_id,json=bizId,proto3" json:"biz_id,omitempty"`
-	ReceiverId uint64                 `protobuf:"varint,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
+	ReceiverId uint64                 `protobuf:"varint,2,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
 	// body 的序列化类型。
-	SerializeType v1.SerializeType `protobuf:"varint,4,opt,name=serialize_type,json=serializeType,proto3,enum=common.v1.SerializeType" json:"serialize_type,omitempty"`
+	SerializeType v1.SerializeType `protobuf:"varint,3,opt,name=serialize_type,json=serializeType,proto3,enum=common.v1.SerializeType" json:"serialize_type,omitempty"`
 	// 消息体。
-	Body          []byte `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
+	Body          []byte `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -288,13 +287,6 @@ func (x *PushMessage) GetMessageId() string {
 		return x.MessageId
 	}
 	return ""
-}
-
-func (x *PushMessage) GetBizId() uint64 {
-	if x != nil {
-		return x.BizId
-	}
-	return 0
 }
 
 func (x *PushMessage) GetReceiverId() uint64 {
@@ -554,15 +546,14 @@ const file_message_v1_message_proto_rawDesc = "" +
 	"AckPayload\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
 	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"\xb9\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"\xa2\x01\n" +
 	"\vPushMessage\x12\x1d\n" +
 	"\n" +
-	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x15\n" +
-	"\x06biz_id\x18\x02 \x01(\x04R\x05bizId\x12\x1f\n" +
-	"\vreceiver_id\x18\x03 \x01(\x04R\n" +
+	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1f\n" +
+	"\vreceiver_id\x18\x02 \x01(\x04R\n" +
 	"receiverId\x12?\n" +
-	"\x0eserialize_type\x18\x04 \x01(\x0e2\x18.common.v1.SerializeTypeR\rserializeType\x12\x12\n" +
-	"\x04body\x18\x05 \x01(\fR\x04body\"_\n" +
+	"\x0eserialize_type\x18\x03 \x01(\x0e2\x18.common.v1.SerializeTypeR\rserializeType\x12\x12\n" +
+	"\x04body\x18\x04 \x01(\fR\x04body\"_\n" +
 	"\vPushRequest\x121\n" +
 	"\amessage\x18\x01 \x01(\v2\x17.message.v1.PushMessageR\amessage\x12\x1d\n" +
 	"\n" +

@@ -55,14 +55,13 @@ message AckPayload {
 // 会向前端发送 CommandType 为 COMMAND_TYPE_DOWNSTREAM 的 Message。
 message PushMessage {
   string message_id = 1;
-  uint64 biz_id = 2;
-  uint64 receiver_id = 3;
+  uint64 receiver_id = 2;
 
   // body 的序列化类型。
-  common.v1.SerializeType serialize_type = 4;
+  common.v1.SerializeType serialize_type = 3;
 
   // 消息体。
-  bytes body = 5;
+  bytes body = 4;
 }
 
 // PushService 由网关提供给后端 ( 业务服务端 ) 调用。

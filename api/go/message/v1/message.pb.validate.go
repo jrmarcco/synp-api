@@ -274,8 +274,6 @@ func (m *PushMessage) validate(all bool) error {
 
 	// no validation rules for MessageId
 
-	// no validation rules for BizId
-
 	// no validation rules for ReceiverId
 
 	// no validation rules for SerializeType
