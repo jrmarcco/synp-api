@@ -62,7 +62,7 @@ func (m *Message) validate(all bool) error {
 
 	// no validation rules for MessageId
 
-	// no validation rules for Cmd
+	// no validation rules for CommandType
 
 	// no validation rules for SerializeType
 
@@ -167,11 +167,11 @@ func (m *AckPayload) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Success
+	// no validation rules for IsSuccess
 
 	// no validation rules for ErrorMessage
 
-	// no validation rules for Timestamp
+	// no validation rules for TimestampMs
 
 	if len(errors) > 0 {
 		return AckPayloadMultiError(errors)
@@ -408,7 +408,7 @@ func (m *PushRequest) validate(all bool) error {
 		}
 	}
 
-	// no validation rules for NeedRetry
+	// no validation rules for ShouldRetry
 
 	if len(errors) > 0 {
 		return PushRequestMultiError(errors)

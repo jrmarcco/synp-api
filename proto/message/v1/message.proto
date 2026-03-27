@@ -25,8 +25,8 @@ message Message {
   string message_id = 1;
 
   // 消息类型。
-  // 这里不使用 MessageType type 作为字段名是因为 type 在 go 里面是关键字。
-  common.v1.CommandType cmd = 2;
+  // 这里不使用 type 作为字段名是因为 type 在 go 里面是关键字。
+  common.v1.CommandType command_type = 2;
 
   // body 的序列化类型。
   common.v1.SerializeType serialize_type = 3;
@@ -36,17 +36,17 @@ message Message {
 }
 
 // AckPayload 是消息确认的载荷，包含消息的处理结果。
-// 当 Message.cmd = COMMAND_TYPE_ACK 时，该消息会被序列化到 Message.body 中。
 // 适用于上行消息和下行消息的 ACK 响应。
+// 当 Message.command_type = COMMAND_TYPE_ACK 时，该消息会被序列化到 Message.body 中。
 message AckPayload {
   // 消息处理是否成功。
-  bool success = 1;
+  bool is_success = 1;
 
   // 错误信息（ 仅在 success = false 时有值 ）。
   string error_message = 2;
 
   // 服务端处理时间戳 ( 毫秒 )。
-  int64 timestamp = 3;
+  int64 timestamp_ms = 3;
 }
 
 // PushMessage 是由后端 ( 业务服务端 ) 主动向网关发送的消息。
@@ -75,7 +75,9 @@ service PushService {
 
 message PushRequest {
   PushMessage message = 1;
-  bool need_retry = 2;
+
+  // 是否应该在失败时重试。
+  bool should_retry = 2;
 }
 
 enum PushStatus {

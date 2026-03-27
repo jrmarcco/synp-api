@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package node.v1;
 
-// Node 标识一个网关节点信息。
+// 标识一个网关节点信息。
 // 用于负载均衡和连接重定向策略。
 message Node {
   string id = 1;
@@ -26,4 +26,18 @@ message Node {
 
 message NodeList {
   repeated Node nodes = 1;
+}
+
+// 节点定位服务。
+service LocateService {
+  rpc LocateUser()
+}
+
+message LocateUserRequest {
+  uint64 biz_id = 1;
+  uint64 user_id = 2;
+}
+
+message LocateUserResponse {
+
 }
