@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package node.v1;
+
+message UserLocation {
+  string service_name = 1;
+  string service_addr = 2;
+}
+
+// LocateService 提供用户连接网关节点的查询能力。
+service LocateService {
+  rpc LocateUser(LocateUserRequest) returns (LocateUserResponse);
+}
+
+message LocateUserRequest {
+  uint64 biz_id = 1;
+  uint64 user_id = 2;
+}
+
+message LocateUserResponse {
+  repeated UserLocation locations = 1;
+}
