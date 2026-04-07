@@ -60,9 +60,9 @@ func (m *Message) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for MessageId
-
 	// no validation rules for CommandType
+
+	// no validation rules for MessageId
 
 	// no validation rules for SerializeType
 

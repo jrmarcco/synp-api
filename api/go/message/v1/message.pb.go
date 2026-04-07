@@ -83,6 +83,9 @@ func (PushStatus) EnumDescriptor() ([]byte, []int) {
 // Message 是前端 ( 业务客户端 ) 和网关之间的通信消息。
 type Message struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// 消息类型。
+	// 这里不使用 type 作为字段名是因为 type 在 go 里面是关键字。
+	CommandType v1.CommandType `protobuf:"varint,1,opt,name=command_type,json=commandType,proto3,enum=common.v1.CommandType" json:"command_type,omitempty"`
 	// 由前端 ( 业务客户端 ) 生成，有 2 个作用:
 	//
 	//	1.消息去重。
@@ -100,10 +103,7 @@ type Message struct {
 	//
 	//	// 也支持从时间戳生成
 	//	const messageId = ulid(Date.now())
-	MessageId string `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	// 消息类型。
-	// 这里不使用 type 作为字段名是因为 type 在 go 里面是关键字。
-	CommandType v1.CommandType `protobuf:"varint,2,opt,name=command_type,json=commandType,proto3,enum=common.v1.CommandType" json:"command_type,omitempty"`
+	MessageId string `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
 	// body 的序列化类型。
 	SerializeType v1.SerializeType `protobuf:"varint,3,opt,name=serialize_type,json=serializeType,proto3,enum=common.v1.SerializeType" json:"serialize_type,omitempty"`
 	// 消息体。
@@ -142,18 +142,18 @@ func (*Message) Descriptor() ([]byte, []int) {
 	return file_message_v1_message_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Message) GetMessageId() string {
-	if x != nil {
-		return x.MessageId
-	}
-	return ""
-}
-
 func (x *Message) GetCommandType() v1.CommandType {
 	if x != nil {
 		return x.CommandType
 	}
 	return v1.CommandType(0)
+}
+
+func (x *Message) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
 }
 
 func (x *Message) GetSerializeType() v1.SerializeType {
@@ -537,10 +537,10 @@ const file_message_v1_message_proto_rawDesc = "" +
 	"\n" +
 	"\x18message/v1/message.proto\x12\n" +
 	"message.v1\x1a\x15common/v1/types.proto\"\xb8\x01\n" +
-	"\aMessage\x12\x1d\n" +
+	"\aMessage\x129\n" +
+	"\fcommand_type\x18\x01 \x01(\x0e2\x16.common.v1.CommandTypeR\vcommandType\x12\x1d\n" +
 	"\n" +
-	"message_id\x18\x01 \x01(\tR\tmessageId\x129\n" +
-	"\fcommand_type\x18\x02 \x01(\x0e2\x16.common.v1.CommandTypeR\vcommandType\x12?\n" +
+	"message_id\x18\x02 \x01(\tR\tmessageId\x12?\n" +
 	"\x0eserialize_type\x18\x03 \x01(\x0e2\x18.common.v1.SerializeTypeR\rserializeType\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\"s\n" +
 	"\n" +

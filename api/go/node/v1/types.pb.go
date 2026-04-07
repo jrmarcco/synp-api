@@ -32,7 +32,7 @@ type Node struct {
 	Weight int32 `protobuf:"varint,4,opt,name=weight,proto3" json:"weight,omitempty"`
 	// 节点位置。
 	Location string `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
-	// 节点容量（可支撑连接数的最大值）。
+	// 节点容量 ( 可支撑连接数的最大值 )。
 	ConnCapacity int64 `protobuf:"varint,6,opt,name=conn_capacity,json=connCapacity,proto3" json:"conn_capacity,omitempty"`
 	// 节点当前负载。
 	Load int64 `protobuf:"varint,7,opt,name=load,proto3" json:"load,omitempty"`

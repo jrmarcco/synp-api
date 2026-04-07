@@ -6,6 +6,10 @@ import "common/v1/types.proto";
 
 // Message 是前端 ( 业务客户端 ) 和网关之间的通信消息。
 message Message {
+  // 消息类型。
+  // 这里不使用 type 作为字段名是因为 type 在 go 里面是关键字。
+  common.v1.CommandType command_type = 1;
+
   // 由前端 ( 业务客户端 ) 生成，有 2 个作用:
   //  1.消息去重。
   //  2.对 message_id 进行 hash，选择消息队列分区从而保证消息有序性。
@@ -22,11 +26,7 @@ message Message {
   //
   //  // 也支持从时间戳生成
   //  const messageId = ulid(Date.now())
-  string message_id = 1;
-
-  // 消息类型。
-  // 这里不使用 type 作为字段名是因为 type 在 go 里面是关键字。
-  common.v1.CommandType command_type = 2;
+  string message_id = 2;
 
   // body 的序列化类型。
   common.v1.SerializeType serialize_type = 3;
