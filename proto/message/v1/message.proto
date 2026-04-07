@@ -42,11 +42,11 @@ message AckPayload {
   // 消息处理是否成功。
   bool is_success = 1;
 
-  // 错误信息（ 仅在 success = false 时有值 ）。
-  string error_message = 2;
-
   // 服务端处理时间戳 ( 毫秒 )。
-  int64 timestamp_ms = 3;
+  int64 timestamp_ms = 2;
+
+  // 错误信息（ 仅在 success = false 时有值 ）。
+  string error_message = 3;
 }
 
 // PushMessage 是由后端 ( 业务服务端 ) 主动向网关发送的消息。
@@ -55,13 +55,14 @@ message AckPayload {
 // 会向前端发送 CommandType 为 COMMAND_TYPE_DOWNSTREAM 的 Message。
 message PushMessage {
   string message_id = 1;
-  uint64 receiver_id = 2;
+  uint64 business_id = 2;
+  uint64 receiver_id = 3;
 
   // body 的序列化类型。
-  common.v1.SerializeType serialize_type = 3;
+  common.v1.SerializeType serialize_type = 4;
 
   // 消息体。
-  bytes body = 4;
+  bytes body = 5;
 }
 
 // PushService 由网关提供给后端 ( 业务服务端 ) 调用。

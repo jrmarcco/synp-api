@@ -177,10 +177,10 @@ type AckPayload struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 消息处理是否成功。
 	IsSuccess bool `protobuf:"varint,1,opt,name=is_success,json=isSuccess,proto3" json:"is_success,omitempty"`
-	// 错误信息（ 仅在 success = false 时有值 ）。
-	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	// 服务端处理时间戳 ( 毫秒 )。
-	TimestampMs   int64 `protobuf:"varint,3,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
+	TimestampMs int64 `protobuf:"varint,2,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
+	// 错误信息（ 仅在 success = false 时有值 ）。
+	ErrorMessage  string `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -222,18 +222,18 @@ func (x *AckPayload) GetIsSuccess() bool {
 	return false
 }
 
-func (x *AckPayload) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
 func (x *AckPayload) GetTimestampMs() int64 {
 	if x != nil {
 		return x.TimestampMs
 	}
 	return 0
+}
+
+func (x *AckPayload) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
 }
 
 // PushMessage 是由后端 ( 业务服务端 ) 主动向网关发送的消息。
@@ -243,11 +243,12 @@ func (x *AckPayload) GetTimestampMs() int64 {
 type PushMessage struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	MessageId  string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	ReceiverId uint64                 `protobuf:"varint,2,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
+	BusinessId uint64                 `protobuf:"varint,2,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
+	ReceiverId uint64                 `protobuf:"varint,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
 	// body 的序列化类型。
-	SerializeType v1.SerializeType `protobuf:"varint,3,opt,name=serialize_type,json=serializeType,proto3,enum=common.v1.SerializeType" json:"serialize_type,omitempty"`
+	SerializeType v1.SerializeType `protobuf:"varint,4,opt,name=serialize_type,json=serializeType,proto3,enum=common.v1.SerializeType" json:"serialize_type,omitempty"`
 	// 消息体。
-	Body          []byte `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	Body          []byte `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -287,6 +288,13 @@ func (x *PushMessage) GetMessageId() string {
 		return x.MessageId
 	}
 	return ""
+}
+
+func (x *PushMessage) GetBusinessId() uint64 {
+	if x != nil {
+		return x.BusinessId
+	}
+	return 0
 }
 
 func (x *PushMessage) GetReceiverId() uint64 {
@@ -546,16 +554,18 @@ const file_message_v1_message_proto_rawDesc = "" +
 	"\n" +
 	"AckPayload\x12\x1d\n" +
 	"\n" +
-	"is_success\x18\x01 \x01(\bR\tisSuccess\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12!\n" +
-	"\ftimestamp_ms\x18\x03 \x01(\x03R\vtimestampMs\"\xa2\x01\n" +
+	"is_success\x18\x01 \x01(\bR\tisSuccess\x12!\n" +
+	"\ftimestamp_ms\x18\x02 \x01(\x03R\vtimestampMs\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\xc3\x01\n" +
 	"\vPushMessage\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1f\n" +
-	"\vreceiver_id\x18\x02 \x01(\x04R\n" +
+	"\vbusiness_id\x18\x02 \x01(\x04R\n" +
+	"businessId\x12\x1f\n" +
+	"\vreceiver_id\x18\x03 \x01(\x04R\n" +
 	"receiverId\x12?\n" +
-	"\x0eserialize_type\x18\x03 \x01(\x0e2\x18.common.v1.SerializeTypeR\rserializeType\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\fR\x04body\"c\n" +
+	"\x0eserialize_type\x18\x04 \x01(\x0e2\x18.common.v1.SerializeTypeR\rserializeType\x12\x12\n" +
+	"\x04body\x18\x05 \x01(\fR\x04body\"c\n" +
 	"\vPushRequest\x121\n" +
 	"\amessage\x18\x01 \x01(\v2\x17.message.v1.PushMessageR\amessage\x12!\n" +
 	"\fshould_retry\x18\x02 \x01(\bR\vshouldRetry\"c\n" +

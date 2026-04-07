@@ -169,9 +169,9 @@ func (m *AckPayload) validate(all bool) error {
 
 	// no validation rules for IsSuccess
 
-	// no validation rules for ErrorMessage
-
 	// no validation rules for TimestampMs
+
+	// no validation rules for ErrorMessage
 
 	if len(errors) > 0 {
 		return AckPayloadMultiError(errors)
@@ -273,6 +273,8 @@ func (m *PushMessage) validate(all bool) error {
 	var errors []error
 
 	// no validation rules for MessageId
+
+	// no validation rules for BusinessId
 
 	// no validation rules for ReceiverId
 
