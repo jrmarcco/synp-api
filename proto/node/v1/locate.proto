@@ -13,7 +13,7 @@ service LocateService {
 }
 
 message LocateUserRequest {
-  uint64 biz_id = 1;
+  uint64 business_id = 1;
   uint64 user_id = 2;
 }
 

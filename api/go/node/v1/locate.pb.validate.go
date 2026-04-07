@@ -160,7 +160,7 @@ func (m *LocateUserRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for BizId
+	// no validation rules for BusinessId
 
 	// no validation rules for UserId
 

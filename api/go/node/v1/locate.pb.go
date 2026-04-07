@@ -75,7 +75,7 @@ func (x *UserLocation) GetServiceAddr() string {
 
 type LocateUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BizId         uint64                 `protobuf:"varint,1,opt,name=biz_id,json=bizId,proto3" json:"biz_id,omitempty"`
+	BusinessId    uint64                 `protobuf:"varint,1,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
 	UserId        uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -111,9 +111,9 @@ func (*LocateUserRequest) Descriptor() ([]byte, []int) {
 	return file_node_v1_locate_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *LocateUserRequest) GetBizId() uint64 {
+func (x *LocateUserRequest) GetBusinessId() uint64 {
 	if x != nil {
-		return x.BizId
+		return x.BusinessId
 	}
 	return 0
 }
@@ -176,9 +176,10 @@ const file_node_v1_locate_proto_rawDesc = "" +
 	"\x14node/v1/locate.proto\x12\anode.v1\"T\n" +
 	"\fUserLocation\x12!\n" +
 	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12!\n" +
-	"\fservice_addr\x18\x02 \x01(\tR\vserviceAddr\"C\n" +
-	"\x11LocateUserRequest\x12\x15\n" +
-	"\x06biz_id\x18\x01 \x01(\x04R\x05bizId\x12\x17\n" +
+	"\fservice_addr\x18\x02 \x01(\tR\vserviceAddr\"M\n" +
+	"\x11LocateUserRequest\x12\x1f\n" +
+	"\vbusiness_id\x18\x01 \x01(\x04R\n" +
+	"businessId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x04R\x06userId\"I\n" +
 	"\x12LocateUserResponse\x123\n" +
 	"\tlocations\x18\x01 \x03(\v2\x15.node.v1.UserLocationR\tlocations2V\n" +
