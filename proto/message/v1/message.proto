@@ -28,11 +28,8 @@ message Message {
   //  const messageId = ulid(Date.now())
   string message_id = 2;
 
-  // body 的序列化类型。
-  common.v1.SerializeType serialize_type = 3;
-
   // 消息体。
-  bytes body = 4;
+  bytes body = 3;
 }
 
 // AckPayload 是消息确认的载荷，包含消息的处理结果。
@@ -58,11 +55,8 @@ message PushMessage {
   uint64 business_id = 2;
   uint64 receiver_id = 3;
 
-  // body 的序列化类型。
-  common.v1.SerializeType serialize_type = 4;
-
   // 消息体。
-  bytes body = 5;
+  bytes body = 4;
 }
 
 // PushService 由网关提供给后端 ( 业务服务端 ) 调用。

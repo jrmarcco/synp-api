@@ -26,14 +26,6 @@ enum CommandType {
   COMMAND_TYPE_RATE_LIMIT_EXCEEDED = 7;
 }
 
-// 消息体的序列化类型。
-// 目前只支持 protobuf 和 json 两种 ( 生产环境推荐使用 protobuf )。
-enum SerializeType {
-  SERIALIZE_TYPE_UNSPECIFIED = 0;
-  SERIALIZE_TYPE_PROTOBUF = 1;
-  SERIALIZE_TYPE_JSON = 2;
-}
-
 // 目的地频道类型。
 enum DestinationType {
   DESTINATION_TYPE_UNSPECIFIED = 0;

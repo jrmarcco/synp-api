@@ -93,57 +93,6 @@ func (CommandType) EnumDescriptor() ([]byte, []int) {
 	return file_common_v1_types_proto_rawDescGZIP(), []int{0}
 }
 
-// 消息体的序列化类型。
-// 目前只支持 protobuf 和 json 两种 ( 生产环境推荐使用 protobuf )。
-type SerializeType int32
-
-const (
-	SerializeType_SERIALIZE_TYPE_UNSPECIFIED SerializeType = 0
-	SerializeType_SERIALIZE_TYPE_PROTOBUF    SerializeType = 1
-	SerializeType_SERIALIZE_TYPE_JSON        SerializeType = 2
-)
-
-// Enum value maps for SerializeType.
-var (
-	SerializeType_name = map[int32]string{
-		0: "SERIALIZE_TYPE_UNSPECIFIED",
-		1: "SERIALIZE_TYPE_PROTOBUF",
-		2: "SERIALIZE_TYPE_JSON",
-	}
-	SerializeType_value = map[string]int32{
-		"SERIALIZE_TYPE_UNSPECIFIED": 0,
-		"SERIALIZE_TYPE_PROTOBUF":    1,
-		"SERIALIZE_TYPE_JSON":        2,
-	}
-)
-
-func (x SerializeType) Enum() *SerializeType {
-	p := new(SerializeType)
-	*p = x
-	return p
-}
-
-func (x SerializeType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (SerializeType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_v1_types_proto_enumTypes[1].Descriptor()
-}
-
-func (SerializeType) Type() protoreflect.EnumType {
-	return &file_common_v1_types_proto_enumTypes[1]
-}
-
-func (x SerializeType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use SerializeType.Descriptor instead.
-func (SerializeType) EnumDescriptor() ([]byte, []int) {
-	return file_common_v1_types_proto_rawDescGZIP(), []int{1}
-}
-
 // 目的地频道类型。
 type DestinationType int32
 
@@ -178,11 +127,11 @@ func (x DestinationType) String() string {
 }
 
 func (DestinationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_v1_types_proto_enumTypes[2].Descriptor()
+	return file_common_v1_types_proto_enumTypes[1].Descriptor()
 }
 
 func (DestinationType) Type() protoreflect.EnumType {
-	return &file_common_v1_types_proto_enumTypes[2]
+	return &file_common_v1_types_proto_enumTypes[1]
 }
 
 func (x DestinationType) Number() protoreflect.EnumNumber {
@@ -191,7 +140,7 @@ func (x DestinationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DestinationType.Descriptor instead.
 func (DestinationType) EnumDescriptor() ([]byte, []int) {
-	return file_common_v1_types_proto_rawDescGZIP(), []int{2}
+	return file_common_v1_types_proto_rawDescGZIP(), []int{1}
 }
 
 var File_common_v1_types_proto protoreflect.FileDescriptor
@@ -207,11 +156,7 @@ const file_common_v1_types_proto_rawDesc = "" +
 	"\x17COMMAND_TYPE_DOWNSTREAM\x10\x04\x12\x1f\n" +
 	"\x1bCOMMAND_TYPE_DOWNSTREAM_ACK\x10\x05\x12\x19\n" +
 	"\x15COMMAND_TYPE_REDIRECT\x10\x06\x12$\n" +
-	" COMMAND_TYPE_RATE_LIMIT_EXCEEDED\x10\a*e\n" +
-	"\rSerializeType\x12\x1e\n" +
-	"\x1aSERIALIZE_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
-	"\x17SERIALIZE_TYPE_PROTOBUF\x10\x01\x12\x17\n" +
-	"\x13SERIALIZE_TYPE_JSON\x10\x02*l\n" +
+	" COMMAND_TYPE_RATE_LIMIT_EXCEEDED\x10\a*l\n" +
 	"\x0fDestinationType\x12 \n" +
 	"\x1cDESTINATION_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17DESTINATION_TYPE_SINGLE\x10\x01\x12\x1a\n" +
@@ -232,11 +177,10 @@ func file_common_v1_types_proto_rawDescGZIP() []byte {
 	return file_common_v1_types_proto_rawDescData
 }
 
-var file_common_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_common_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_common_v1_types_proto_goTypes = []any{
 	(CommandType)(0),     // 0: common.v1.CommandType
-	(SerializeType)(0),   // 1: common.v1.SerializeType
-	(DestinationType)(0), // 2: common.v1.DestinationType
+	(DestinationType)(0), // 1: common.v1.DestinationType
 }
 var file_common_v1_types_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -256,7 +200,7 @@ func file_common_v1_types_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_v1_types_proto_rawDesc), len(file_common_v1_types_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      2,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   0,

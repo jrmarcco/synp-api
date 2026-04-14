@@ -64,8 +64,6 @@ func (m *Message) validate(all bool) error {
 
 	// no validation rules for MessageId
 
-	// no validation rules for SerializeType
-
 	// no validation rules for Body
 
 	if len(errors) > 0 {
@@ -277,8 +275,6 @@ func (m *PushMessage) validate(all bool) error {
 	// no validation rules for BusinessId
 
 	// no validation rules for ReceiverId
-
-	// no validation rules for SerializeType
 
 	// no validation rules for Body
 

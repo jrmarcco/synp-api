@@ -104,10 +104,8 @@ type Message struct {
 	//	// 也支持从时间戳生成
 	//	const messageId = ulid(Date.now())
 	MessageId string `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	// body 的序列化类型。
-	SerializeType v1.SerializeType `protobuf:"varint,3,opt,name=serialize_type,json=serializeType,proto3,enum=common.v1.SerializeType" json:"serialize_type,omitempty"`
 	// 消息体。
-	Body          []byte `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	Body          []byte `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -154,13 +152,6 @@ func (x *Message) GetMessageId() string {
 		return x.MessageId
 	}
 	return ""
-}
-
-func (x *Message) GetSerializeType() v1.SerializeType {
-	if x != nil {
-		return x.SerializeType
-	}
-	return v1.SerializeType(0)
 }
 
 func (x *Message) GetBody() []byte {
@@ -245,10 +236,8 @@ type PushMessage struct {
 	MessageId  string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
 	BusinessId uint64                 `protobuf:"varint,2,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
 	ReceiverId uint64                 `protobuf:"varint,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
-	// body 的序列化类型。
-	SerializeType v1.SerializeType `protobuf:"varint,4,opt,name=serialize_type,json=serializeType,proto3,enum=common.v1.SerializeType" json:"serialize_type,omitempty"`
 	// 消息体。
-	Body          []byte `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
+	Body          []byte `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -302,13 +291,6 @@ func (x *PushMessage) GetReceiverId() uint64 {
 		return x.ReceiverId
 	}
 	return 0
-}
-
-func (x *PushMessage) GetSerializeType() v1.SerializeType {
-	if x != nil {
-		return x.SerializeType
-	}
-	return v1.SerializeType(0)
 }
 
 func (x *PushMessage) GetBody() []byte {
@@ -544,28 +526,26 @@ var File_message_v1_message_proto protoreflect.FileDescriptor
 const file_message_v1_message_proto_rawDesc = "" +
 	"\n" +
 	"\x18message/v1/message.proto\x12\n" +
-	"message.v1\x1a\x15common/v1/types.proto\"\xb8\x01\n" +
+	"message.v1\x1a\x15common/v1/types.proto\"w\n" +
 	"\aMessage\x129\n" +
 	"\fcommand_type\x18\x01 \x01(\x0e2\x16.common.v1.CommandTypeR\vcommandType\x12\x1d\n" +
 	"\n" +
-	"message_id\x18\x02 \x01(\tR\tmessageId\x12?\n" +
-	"\x0eserialize_type\x18\x03 \x01(\x0e2\x18.common.v1.SerializeTypeR\rserializeType\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\fR\x04body\"s\n" +
+	"message_id\x18\x02 \x01(\tR\tmessageId\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\fR\x04body\"s\n" +
 	"\n" +
 	"AckPayload\x12\x1d\n" +
 	"\n" +
 	"is_success\x18\x01 \x01(\bR\tisSuccess\x12!\n" +
 	"\ftimestamp_ms\x18\x02 \x01(\x03R\vtimestampMs\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\xc3\x01\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x82\x01\n" +
 	"\vPushMessage\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1f\n" +
 	"\vbusiness_id\x18\x02 \x01(\x04R\n" +
 	"businessId\x12\x1f\n" +
 	"\vreceiver_id\x18\x03 \x01(\x04R\n" +
-	"receiverId\x12?\n" +
-	"\x0eserialize_type\x18\x04 \x01(\x0e2\x18.common.v1.SerializeTypeR\rserializeType\x12\x12\n" +
-	"\x04body\x18\x05 \x01(\fR\x04body\"c\n" +
+	"receiverId\x12\x12\n" +
+	"\x04body\x18\x04 \x01(\fR\x04body\"c\n" +
 	"\vPushRequest\x121\n" +
 	"\amessage\x18\x01 \x01(\v2\x17.message.v1.PushMessageR\amessage\x12!\n" +
 	"\fshould_retry\x18\x02 \x01(\bR\vshouldRetry\"c\n" +
@@ -618,24 +598,21 @@ var file_message_v1_message_proto_goTypes = []any{
 	(*BatchPushRequest)(nil),  // 6: message.v1.BatchPushRequest
 	(*BatchPushResponse)(nil), // 7: message.v1.BatchPushResponse
 	(v1.CommandType)(0),       // 8: common.v1.CommandType
-	(v1.SerializeType)(0),     // 9: common.v1.SerializeType
 }
 var file_message_v1_message_proto_depIdxs = []int32{
 	8, // 0: message.v1.Message.command_type:type_name -> common.v1.CommandType
-	9, // 1: message.v1.Message.serialize_type:type_name -> common.v1.SerializeType
-	9, // 2: message.v1.PushMessage.serialize_type:type_name -> common.v1.SerializeType
-	3, // 3: message.v1.PushRequest.message:type_name -> message.v1.PushMessage
-	0, // 4: message.v1.PushResponse.status:type_name -> message.v1.PushStatus
-	3, // 5: message.v1.BatchPushRequest.messages:type_name -> message.v1.PushMessage
-	4, // 6: message.v1.PushService.Push:input_type -> message.v1.PushRequest
-	6, // 7: message.v1.PushService.BatchPush:input_type -> message.v1.BatchPushRequest
-	5, // 8: message.v1.PushService.Push:output_type -> message.v1.PushResponse
-	7, // 9: message.v1.PushService.BatchPush:output_type -> message.v1.BatchPushResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	3, // 1: message.v1.PushRequest.message:type_name -> message.v1.PushMessage
+	0, // 2: message.v1.PushResponse.status:type_name -> message.v1.PushStatus
+	3, // 3: message.v1.BatchPushRequest.messages:type_name -> message.v1.PushMessage
+	4, // 4: message.v1.PushService.Push:input_type -> message.v1.PushRequest
+	6, // 5: message.v1.PushService.BatchPush:input_type -> message.v1.BatchPushRequest
+	5, // 6: message.v1.PushService.Push:output_type -> message.v1.PushResponse
+	7, // 7: message.v1.PushService.BatchPush:output_type -> message.v1.BatchPushResponse
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_message_v1_message_proto_init() }
