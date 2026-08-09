@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package route.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// RouteService 维护用户连接与网关节点之间的路由关系。
+service RouteService {
+  // RegisterConnection 由网关在用户建立连接后调用。
+  // 同一个 connection_id 的重复注册应当视为幂等操作，并刷新连接的过期时间。
+  rpc RegisterConnection(RegisterConnectionRequest) returns (RegisterConnectionResponse);
+
+  // GetUserConnections 由业务服务调用，用于查询用户当前连接的连接。
+  rpc GetUserConnections(GetUserConnectionsRequest) returns (GetUserConnectionsResponse);
+}
+
+// DeviceType 表示用户设备类型。
+enum DeviceType {
+  DEVICE_TYPE_UNSPECIFIED = 0;
+  DEVICE_TYPE_MOBILE = 1;
+  DEVICE_TYPE_TABLET = 2;
+  DEVICE_TYPE_PC = 3;
+  DEVICE_TYPE_UNKNOWN = 4;
+}
+
+// Node 是用户所连接的网关节点信息。
+message Node {
+  string id = 1;
+  string cluster_id = 2;
+
+  // service_name 和 service_address 用于服务发现或直接访问网关节点。
+  string service_name = 3;
+  string service_address = 4;
+}
+
+// UserConnection 表示一条用户连接及其所在网关节点。
+message UserConnection {
+  uint64 business_id = 1;
+  uint64 user_id = 2;
+
+  Node node = 3;
+
+  // connection_id 由网关生成，在同一业务内唯一。
+  string connection_id = 4;
+  DeviceType device_type = 5;
+
+  google.protobuf.Timestamp connected_at = 6;
+}
+
+message RegisterConnectionRequest {
+  UserConnection connection = 1;
+
+  // ttl_seconds 是路由记录的有效期。网关可通过重复注册刷新有效期。
+  uint32 ttl_seconds = 2;
+}
+
+message RegisterConnectionResponse {
+  google.protobuf.Timestamp registered_at = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message GetUserConnectionsRequest {
+  uint64 business_id = 1;
+  uint64 user_id = 2;
+}
+
+message GetUserConnectionsResponse {
+  // connections 支持同一用户同时连接多个设备或网关节点。
+  repeated UserConnection connections = 1;
+}
