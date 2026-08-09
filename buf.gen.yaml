@@ -3,7 +3,7 @@ managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: github.com/jrmarcco/synp-api/api/go
+      value: github.com/jrmarcco/synpapi/api/go
 plugins:
   # 用于生成 Go 语言的基础 Protocol Buffers 代码（即 `.proto` 文件对应的 `.pb.go` 文件）
   - remote: buf.build/protocolbuffers/go

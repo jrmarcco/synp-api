@@ -160,9 +160,9 @@ const file_common_v1_types_proto_rawDesc = "" +
 	"\x0fDestinationType\x12 \n" +
 	"\x1cDESTINATION_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17DESTINATION_TYPE_SINGLE\x10\x01\x12\x1a\n" +
-	"\x16DESTINATION_TYPE_GROUP\x10\x02B\x98\x01\n" +
+	"\x16DESTINATION_TYPE_GROUP\x10\x02B\x97\x01\n" +
 	"\rcom.common.v1B\n" +
-	"TypesProtoP\x01Z6github.com/jrmarcco/synp-api/api/go/common/v1;commonv1\xa2\x02\x03CXX\xaa\x02\tCommon.V1\xca\x02\tCommon\\V1\xe2\x02\x15Common\\V1\\GPBMetadata\xea\x02\n" +
+	"TypesProtoP\x01Z5github.com/jrmarcco/synpapi/api/go/common/v1;commonv1\xa2\x02\x03CXX\xaa\x02\tCommon.V1\xca\x02\tCommon\\V1\xe2\x02\x15Common\\V1\\GPBMetadata\xea\x02\n" +
 	"Common::V1b\x06proto3"
 
 var (

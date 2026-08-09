@@ -481,9 +481,9 @@ const file_route_v1_route_proto_rawDesc = "" +
 	"\x13DEVICE_TYPE_UNKNOWN\x10\x042\xd0\x01\n" +
 	"\fRouteService\x12_\n" +
 	"\x12RegisterConnection\x12#.route.v1.RegisterConnectionRequest\x1a$.route.v1.RegisterConnectionResponse\x12_\n" +
-	"\x12GetUserConnections\x12#.route.v1.GetUserConnectionsRequest\x1a$.route.v1.GetUserConnectionsResponseB\x91\x01\n" +
+	"\x12GetUserConnections\x12#.route.v1.GetUserConnectionsRequest\x1a$.route.v1.GetUserConnectionsResponseB\x90\x01\n" +
 	"\fcom.route.v1B\n" +
-	"RouteProtoP\x01Z4github.com/jrmarcco/synp-api/api/go/route/v1;routev1\xa2\x02\x03RXX\xaa\x02\bRoute.V1\xca\x02\bRoute\\V1\xe2\x02\x14Route\\V1\\GPBMetadata\xea\x02\tRoute::V1b\x06proto3"
+	"RouteProtoP\x01Z3github.com/jrmarcco/synpapi/api/go/route/v1;routev1\xa2\x02\x03RXX\xaa\x02\bRoute.V1\xca\x02\bRoute\\V1\xe2\x02\x14Route\\V1\\GPBMetadata\xea\x02\tRoute::V1b\x06proto3"
 
 var (
 	file_route_v1_route_proto_rawDescOnce sync.Once

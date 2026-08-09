@@ -91,8 +91,8 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\x06biz_id\x18\x01 \x01(\x04R\x05bizId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\tR\tsessionIdB\x89\x01\n" +
-	"\vcom.auth.v1B\tAuthProtoP\x01Z2github.com/jrmarcco/synp-api/api/go/auth/v1;authv1\xa2\x02\x03AXX\xaa\x02\aAuth.V1\xca\x02\aAuth\\V1\xe2\x02\x13Auth\\V1\\GPBMetadata\xea\x02\bAuth::V1b\x06proto3"
+	"session_id\x18\x03 \x01(\tR\tsessionIdB\x88\x01\n" +
+	"\vcom.auth.v1B\tAuthProtoP\x01Z1github.com/jrmarcco/synpapi/api/go/auth/v1;authv1\xa2\x02\x03AXX\xaa\x02\aAuth.V1\xca\x02\aAuth\\V1\xe2\x02\x13Auth\\V1\\GPBMetadata\xea\x02\bAuth::V1b\x06proto3"
 
 var (
 	file_auth_v1_auth_proto_rawDescOnce sync.Once
