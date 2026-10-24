@@ -7,7 +7,7 @@
 package messagev1
 
 import (
-	v1 "github.com/jrmarcco/synpapis/api/go/common/v1"
+	v1 "github.com/jrmarcco/synp-api/api/go/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -570,7 +570,7 @@ const file_message_v1_message_proto_rawDesc = "" +
 	"\vPushService\x129\n" +
 	"\x04Push\x12\x17.message.v1.PushRequest\x1a\x18.message.v1.PushResponse\x12H\n" +
 	"\tBatchPush\x12\x1c.message.v1.BatchPushRequest\x1a\x1d.message.v1.BatchPushResponseB\xa1\x01\n" +
-	"\x0ecom.message.v1B\fMessageProtoP\x01Z8github.com/jrmarcco/synpapis/api/go/message/v1;messagev1\xa2\x02\x03MXX\xaa\x02\n" +
+	"\x0ecom.message.v1B\fMessageProtoP\x01Z8github.com/jrmarcco/synp-api/api/go/message/v1;messagev1\xa2\x02\x03MXX\xaa\x02\n" +
 	"Message.V1\xca\x02\n" +
 	"Message\\V1\xe2\x02\x16Message\\V1\\GPBMetadata\xea\x02\vMessage::V1b\x06proto3"
 

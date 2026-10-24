@@ -1,4 +1,4 @@
-module github.com/jrmarcco/synpapis
+module github.com/jrmarcco/synp-api
 
 go 1.27.0
 
