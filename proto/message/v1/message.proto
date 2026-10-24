@@ -3,18 +3,19 @@ syntax = "proto3";
 package message.v1;
 
 import "common/v1/types.proto";
+import "google/protobuf/timestamp.proto";
 
-// Message 是前端 ( 业务客户端 ) 和网关之间的通信消息。
+// Message 是前端 ( 业务客户端 ) 和网关之间的通信帧。
 message Message {
-  // 消息类型。
-  // 这里不使用 type 作为字段名是因为 type 在 go 里面是关键字。
+  // 帧类型。
+  // 不使用 type 作为字段名是因为 type 在 go 里面是关键字。
   common.v1.CommandType command_type = 1;
 
-  // 由前端 ( 业务客户端 ) 生成，有 2 个作用:
-  //  1.消息去重。
-  //  2.对 message_id 进行 hash，选择消息队列分区从而保证消息有序性。
+  // 帧标识，作用:
+  //  1. 帧去重。整条链路按 at-least-once 语义处理，重复帧需靠 message_id 幂等消化。
+  //  2. 应答关联。*_ACK 帧回填对应请求帧的 message_id。
   //
-  // message_id 需要由前端生成 ( 建议使用 ULID )
+  //  由前端生成的帧 ( 建议使用 ULID ):
   //
   //  npm install ulid
   //  或
@@ -26,80 +27,97 @@ message Message {
   //
   //  // 也支持从时间戳生成
   //  const messageId = ulid(Date.now())
+  //
+  //  服务端主动下发的帧 ( 如 NOTIFY ) 的 message_id 由服务端生成，仅用于日志排查。
   string message_id = 2;
 
-  // 消息体。
+  // 帧体，按 command_type 解释:
+  //  AUTH                    -> AuthPayload
+  //  AUTH_ACK                -> AuthAckPayload
+  //  UPSTREAM                -> 业务自定义 ( 原样进入 UpstreamMessage.body )
+  //  UPSTREAM_ACK            -> AckPayload
+  //  SYNC                    -> SyncFrame ( message/v1/sync.proto )
+  //  SYNC_ACK                -> SyncAckPayload ( message/v1/sync.proto )
+  //  CONVERSATION_SYNC       -> ConversationSyncFrame ( message/v1/sync.proto )
+  //  CONVERSATION_SYNC_ACK   -> ConversationSyncAckPayload ( message/v1/sync.proto )
+  //  NOTIFY                  -> NotifyPayload
+  //  HEARTBEAT / REDIRECT / RATE_LIMIT_EXCEEDED -> 空
   bytes body = 3;
 }
 
-// AckPayload 是消息确认的载荷，包含消息的处理结果。
-// 适用于上行消息和下行消息的 ACK 响应。
-// 当 Message.command_type = COMMAND_TYPE_ACK 时，该消息会被序列化到 Message.body 中。
-message AckPayload {
-  // 消息处理是否成功。
-  bool is_success = 1;
-
-  // 服务端处理时间戳 ( 毫秒 )。
-  int64 timestamp_ms = 2;
-
-  // 错误信息（ 仅在 success = false 时有值 ）。
-  string error_message = 3;
+// AuthPayload 是 COMMAND_TYPE_AUTH 的 body。
+// 连接建立后的第一帧，未完成鉴权前网关拒绝处理其它指令。
+message AuthPayload {
+  // 后端签发的 JWT，契约见 auth/v1/auth.proto。
+  string token = 1;
 }
 
-// PushMessage 是由后端 ( 业务服务端 ) 主动向网关发送的消息。
-// 通信方式为业务后端推送 PushMessage 到 Kafka 的指定 topic，由网关监听并消费。
-// 网关收到 PushMessage 后，
-// 会向前端发送 CommandType 为 COMMAND_TYPE_DOWNSTREAM 的 Message。
-message PushMessage {
-  string message_id = 1;
-  uint64 business_id = 2;
-  uint64 receiver_id = 3;
+// AuthAckPayload 是 COMMAND_TYPE_AUTH_ACK 的 body。
+message AuthAckPayload {
+  bool success = 1;
 
-  // 消息体。
-  bytes body = 4;
-}
-
-// PushService 由网关提供给后端 ( 业务服务端 ) 调用。
-// 用于以 kafka 通信外的方式主动向前端 ( 业务服务端 ) 推送消息。
-//
-// 前端消息 → 网关 → Kafka → 后端落库 → RPC调用网关 → 目标用户
-service PushService {
-  rpc Push(PushRequest) returns (PushResponse);
-  rpc BatchPush(BatchPushRequest) returns (BatchPushResponse);
-}
-
-message PushRequest {
-  PushMessage message = 1;
-
-  // 是否应该在失败时重试。
-  bool should_retry = 2;
-}
-
-enum PushStatus {
-  PUSH_STATUS_UNSPECIFIED = 0;
-  PUSH_STATUS_SUCCESS = 1; // 成功
-  PUSH_STATUS_USER_OFFLINE = 2; // 用户离线
-  PUSH_STATUS_RATE_LIMITED = 3; // 限流
-  PUSH_STATUS_INVALID_MESSAGE = 4; // 消息格式错误
-  PUSH_STATUS_INTERNAL_ERROR = 5; // 内部错误
-}
-
-message PushResponse {
-  PushStatus status = 1;
+  // 仅在 success = false 时有值。
   string error_message = 2;
 }
 
-message BatchPushRequest {
-  repeated PushMessage messages = 1;
-  // 预留字段。
-  // 可选的回调地址 ( 用于结果通知 )。
-  string callback_url = 2;
+// AckPayload 是 COMMAND_TYPE_UPSTREAM_ACK 的 body。
+// 表示网关已接收该上行帧，不代表业务处理成功。
+// 业务层面的处理结果通过同步链路 ( NOTIFY -> SYNC ) 获得。
+message AckPayload {
+  // 网关是否接收该帧。
+  bool is_success = 1;
+
+  // 网关处理时间戳 ( 毫秒 )。
+  int64 timestamp_ms = 2;
+
+  // 仅在 is_success = false 时有值。
+  string error_message = 3;
 }
 
-// BatchPushResponse 批量推送响应。
-// 目前均为预留字段。
-message BatchPushResponse {
-  string task_id = 1;
-  int32 accepted_count = 2;
-  int32 rejected_count = 3;
+// NotifyPayload 是 COMMAND_TYPE_NOTIFY 的 body。
+// 通知客户端其收件箱有新消息。客户端比较本地游标与 latest_seq，
+// 落后时发起 SYNC 拉取增量，否则忽略 ( 通知可能重复 )。
+message NotifyPayload {
+  // 触发本次通知的收件箱序号 ( InboxEntry.seq，见 message/v1/sync.proto )。
+  uint64 latest_seq = 1;
+}
+
+// UpstreamMessage 是网关投递到 Kafka 上行 topic 的记录。
+//
+// 身份字段由网关以连接鉴权 ( JWT ) 结果盖章，前端自报的身份一律不可信。
+//
+// 分区键: hash(business_id, user_id)。
+// 同一发送者的消息落在同一分区内有序，便于后端为相关收件箱串行分配 seq。
+message UpstreamMessage {
+  string message_id = 1;
+
+  // 发送者身份，网关盖章。
+  uint64 business_id = 2;
+  uint64 user_id = 3;
+  string session_id = 4;
+
+  // 发送连接，用于业务侧追溯。
+  string connection_id = 5;
+
+  // 前端 UPSTREAM 帧的 body，原样转发，网关与后端均不解释。
+  bytes body = 6;
+
+  // 网关接收时间。
+  google.protobuf.Timestamp occurred_at = 7;
+}
+
+// NotifyMessage 是后端投递到 Kafka 通知 topic 的记录，
+// 由推送侧消费后转换为 COMMAND_TYPE_NOTIFY 帧下发，触发客户端同步。
+//
+// 注意它不携带消息本体 —— 消息本体只能通过同步链路获取。
+//
+// 分区键: hash(business_id, receiver_id)。
+message NotifyMessage {
+  string message_id = 1;
+
+  uint64 business_id = 2;
+  uint64 receiver_id = 3;
+
+  // 收件人收件箱当前最大 seq。
+  uint64 latest_seq = 4;
 }

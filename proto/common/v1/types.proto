@@ -3,32 +3,50 @@ syntax = "proto3";
 package common.v1;
 
 // 消息的指令类型。
+//
+// 指令分组约定:
+//  - 客户端发起的指令 ( AUTH / UPSTREAM / SYNC / CONVERSATION_SYNC )
+//    都有对应的 *_ACK 应答指令，通过 Message.message_id 关联。
+//  - NOTIFY 由服务端主动下发，用于触发客户端同步，没有对应的请求帧。
 enum CommandType {
   COMMAND_TYPE_UNSPECIFIED = 0;
 
-  // 心跳指令。
+  // 心跳指令: frontend -> gateway。
   COMMAND_TYPE_HEARTBEAT = 1;
 
-  // 上行消息:  frontend -> gateway -> backend。
-  COMMAND_TYPE_UPSTREAM = 2;
-  // 上行消息 ack: gateway -> frontend。
-  COMMAND_TYPE_UPSTREAM_ACK = 3;
+  // 鉴权指令: frontend -> gateway。
+  // 连接建立后的第一帧，携带后端签发的 JWT。
+  COMMAND_TYPE_AUTH = 2;
+  // 鉴权应答: gateway -> frontend。
+  // 失败时网关在发送应答后关闭连接。
+  COMMAND_TYPE_AUTH_ACK = 3;
 
-  // 下行消息: backend -> gateway -> frontend。
-  COMMAND_TYPE_DOWNSTREAM = 4;
-  // 下行消息: frontend -> gateway。
-  COMMAND_TYPE_DOWNSTREAM_ACK = 5;
+  // 上行消息: frontend -> gateway -> backend ( 经 Kafka )。
+  COMMAND_TYPE_UPSTREAM = 4;
+  // 上行消息回执: gateway -> frontend。
+  // 仅表示网关已接收该帧，不代表业务处理成功。
+  // 业务层面的处理结果通过同步链路 ( NOTIFY -> SYNC ) 获得。
+  COMMAND_TYPE_UPSTREAM_ACK = 5;
 
-  // 重定向指令。
-  COMMAND_TYPE_REDIRECT = 6;
+  // 收件箱增量同步请求: frontend -> gateway。
+  // 网关以连接身份调用后端 SyncService.Sync，并以 SYNC_ACK 应答。
+  COMMAND_TYPE_SYNC = 6;
+  // 收件箱增量同步应答: gateway -> frontend。
+  COMMAND_TYPE_SYNC_ACK = 7;
 
-  // 限流指令：gateway -> frontend。
-  COMMAND_TYPE_RATE_LIMIT_EXCEEDED = 7;
-}
+  // 会话增量同步请求: frontend -> gateway。
+  // 用于读扩散 ( 大群 ) 场景拉取会话 timeline。
+  COMMAND_TYPE_CONVERSATION_SYNC = 8;
+  // 会话增量同步应答: gateway -> frontend。
+  COMMAND_TYPE_CONVERSATION_SYNC_ACK = 9;
 
-// 目的地频道类型。
-enum DestinationType {
-  DESTINATION_TYPE_UNSPECIFIED = 0;
-  DESTINATION_TYPE_SINGLE = 1;
-  DESTINATION_TYPE_GROUP = 2;
+  // 同步通知: backend -> gateway -> frontend。
+  // 通知用户收件箱有新消息，客户端比对游标后决定是否发起 SYNC。
+  COMMAND_TYPE_NOTIFY = 10;
+
+  // 重定向指令: gateway -> frontend。
+  COMMAND_TYPE_REDIRECT = 11;
+
+  // 限流指令: gateway -> frontend。
+  COMMAND_TYPE_RATE_LIMIT_EXCEEDED = 12;
 }

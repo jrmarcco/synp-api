@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package message.v1;
+
+import "message/v1/message.proto";
+
+// NotifyService 由网关提供给后端 ( 业务服务端 ) 调用，
+// 是 Kafka 通知链路之外的即时通知通道 ( 用于低延迟场景，或后端未接入消息队列的事件 )。
+// 与 Kafka 链路语义一致: 只触发客户端同步，不承载消息本体。
+service NotifyService {
+  // Notify 通知单个用户，网关会向其所有在线连接下发 NOTIFY 帧。
+  // 用户不在线时返回 USER_OFFLINE。通知失败无需重试:
+  // 通知只影响实时性，客户端重连后会主动 SYNC 兜底。
+  rpc Notify(NotifyRequest) returns (NotifyResponse);
+
+  // BatchNotify 批量通知，results 与 messages 下标一一对应。
+  rpc BatchNotify(BatchNotifyRequest) returns (BatchNotifyResponse);
+}
+
+message NotifyRequest {
+  NotifyMessage message = 1;
+}
+
+enum NotifyStatus {
+  NOTIFY_STATUS_UNSPECIFIED = 0;
+  // 已向至少一个在线连接下发。
+  NOTIFY_STATUS_SUCCESS = 1;
+  NOTIFY_STATUS_USER_OFFLINE = 2;
+  NOTIFY_STATUS_RATE_LIMITED = 3;
+  NOTIFY_STATUS_INTERNAL_ERROR = 4;
+}
+
+message NotifyResponse {
+  NotifyStatus status = 1;
+
+  // 仅在失败状态时有值。
+  string error_message = 2;
+}
+
+message BatchNotifyRequest {
+  repeated NotifyMessage messages = 1;
+}
+
+message BatchNotifyResponse {
+  repeated NotifyResponse results = 1;
+}

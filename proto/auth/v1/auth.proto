@@ -2,8 +2,49 @@ syntax = "proto3";
 
 package auth.v1;
 
+// JwtPayload 是网关连接鉴权所用 JWT 的 payload 契约。
+//
+// 签名与验证约定:
+//  1. 签名算法固定为 RS256 ( 非对称 )。后端鉴权服务持有私钥负责签发，
+//     网关仅持有公钥做本地验签，因此网关无法伪造 token。
+//  2. 公钥通过 JWKS 端点发布 ( 标准路径 /.well-known/jwks.json )，
+//     网关定期拉取并缓存；token header 中的 kid 用于密钥轮换，
+//     轮换时新旧公钥需在 JWKS 中并存一段重叠期。
+//  3. 网关在处理 AUTH 帧 ( 连接鉴权 ) 时本地完成验证，不回调后端。
+//     验证项: 签名、exp、aud。
+//  4. 各节点需 NTP 对时，exp 判断建议保留 <= 60s 的时钟容差。
+//  5. token 是短周期凭证 ( 建议 exp - iat <= 2h )，
+//     过期后由客户端重新向后端登录获取，网关不负责刷新。
+//
+// 吊销说明:
+//  无状态验签无法即时吊销已签发的 token。登出、顶号等需要即时失效的场景，
+//  由后端在业务侧使 session_id 失效，网关在鉴权时校验 session 有效性
+//  ( 该校验属于后端与网关的内部契约，暂未在本文件定义 )。
 message JwtPayload {
-  uint64 biz_id = 1;
-  uint64 user_id = 2;
-  string session_id = 3; // 这里的 session 指的是业务系统的 session 而不是网关的
+  // ===== RFC 7519 注册 claims =====
+
+  // 签发者，标识后端鉴权服务，如 "synp-auth"。
+  string iss = 1;
+
+  // 受众，固定为网关服务标识 ( 如 "synp-gateway" )，
+  // 防止为其它用途签发的 token 被重放到网关连接上。
+  string aud = 2;
+
+  // 签发时间 ( Unix 秒 )。
+  int64 iat = 3;
+
+  // 过期时间 ( Unix 秒 )。网关拒绝已过期的 token。
+  int64 exp = 4;
+
+  // token 唯一标识，用于审计与潜在的吊销场景。
+  string jti = 5;
+
+  // ===== 业务 claims =====
+
+  uint64 business_id = 6;
+
+  uint64 user_id = 7;
+
+  // 业务系统内的会话 ID ( 注意不是网关连接 ID )。
+  string session_id = 8;
 }

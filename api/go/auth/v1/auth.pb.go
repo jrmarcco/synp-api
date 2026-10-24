@@ -21,11 +21,42 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// JwtPayload 是网关连接鉴权所用 JWT 的 payload 契约。
+//
+// 签名与验证约定:
+//  1. 签名算法固定为 RS256 ( 非对称 )。后端鉴权服务持有私钥负责签发，
+//     网关仅持有公钥做本地验签，因此网关无法伪造 token。
+//  2. 公钥通过 JWKS 端点发布 ( 标准路径 /.well-known/jwks.json )，
+//     网关定期拉取并缓存；token header 中的 kid 用于密钥轮换，
+//     轮换时新旧公钥需在 JWKS 中并存一段重叠期。
+//  3. 网关在处理 AUTH 帧 ( 连接鉴权 ) 时本地完成验证，不回调后端。
+//     验证项: 签名、exp、aud。
+//  4. 各节点需 NTP 对时，exp 判断建议保留 <= 60s 的时钟容差。
+//  5. token 是短周期凭证 ( 建议 exp - iat <= 2h )，
+//     过期后由客户端重新向后端登录获取，网关不负责刷新。
+//
+// 吊销说明:
+//
+//	无状态验签无法即时吊销已签发的 token。登出、顶号等需要即时失效的场景，
+//	由后端在业务侧使 session_id 失效，网关在鉴权时校验 session 有效性
+//	( 该校验属于后端与网关的内部契约，暂未在本文件定义 )。
 type JwtPayload struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	BizId         uint64                 `protobuf:"varint,1,opt,name=biz_id,json=bizId,proto3" json:"biz_id,omitempty"`
-	UserId        uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // 这里的 session 指的是业务系统的 session 而不是网关的
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 签发者，标识后端鉴权服务，如 "synp-auth"。
+	Iss string `protobuf:"bytes,1,opt,name=iss,proto3" json:"iss,omitempty"`
+	// 受众，固定为网关服务标识 ( 如 "synp-gateway" )，
+	// 防止为其它用途签发的 token 被重放到网关连接上。
+	Aud string `protobuf:"bytes,2,opt,name=aud,proto3" json:"aud,omitempty"`
+	// 签发时间 ( Unix 秒 )。
+	Iat int64 `protobuf:"varint,3,opt,name=iat,proto3" json:"iat,omitempty"`
+	// 过期时间 ( Unix 秒 )。网关拒绝已过期的 token。
+	Exp int64 `protobuf:"varint,4,opt,name=exp,proto3" json:"exp,omitempty"`
+	// token 唯一标识，用于审计与潜在的吊销场景。
+	Jti        string `protobuf:"bytes,5,opt,name=jti,proto3" json:"jti,omitempty"`
+	BusinessId uint64 `protobuf:"varint,6,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
+	UserId     uint64 `protobuf:"varint,7,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// 业务系统内的会话 ID ( 注意不是网关连接 ID )。
+	SessionId     string `protobuf:"bytes,8,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -60,9 +91,44 @@ func (*JwtPayload) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *JwtPayload) GetBizId() uint64 {
+func (x *JwtPayload) GetIss() string {
 	if x != nil {
-		return x.BizId
+		return x.Iss
+	}
+	return ""
+}
+
+func (x *JwtPayload) GetAud() string {
+	if x != nil {
+		return x.Aud
+	}
+	return ""
+}
+
+func (x *JwtPayload) GetIat() int64 {
+	if x != nil {
+		return x.Iat
+	}
+	return 0
+}
+
+func (x *JwtPayload) GetExp() int64 {
+	if x != nil {
+		return x.Exp
+	}
+	return 0
+}
+
+func (x *JwtPayload) GetJti() string {
+	if x != nil {
+		return x.Jti
+	}
+	return ""
+}
+
+func (x *JwtPayload) GetBusinessId() uint64 {
+	if x != nil {
+		return x.BusinessId
 	}
 	return 0
 }
@@ -85,13 +151,19 @@ var File_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x12auth/v1/auth.proto\x12\aauth.v1\"[\n" +
+	"\x12auth/v1/auth.proto\x12\aauth.v1\"\xbf\x01\n" +
 	"\n" +
-	"JwtPayload\x12\x15\n" +
-	"\x06biz_id\x18\x01 \x01(\x04R\x05bizId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12\x1d\n" +
+	"JwtPayload\x12\x10\n" +
+	"\x03iss\x18\x01 \x01(\tR\x03iss\x12\x10\n" +
+	"\x03aud\x18\x02 \x01(\tR\x03aud\x12\x10\n" +
+	"\x03iat\x18\x03 \x01(\x03R\x03iat\x12\x10\n" +
+	"\x03exp\x18\x04 \x01(\x03R\x03exp\x12\x10\n" +
+	"\x03jti\x18\x05 \x01(\tR\x03jti\x12\x1f\n" +
+	"\vbusiness_id\x18\x06 \x01(\x04R\n" +
+	"businessId\x12\x17\n" +
+	"\auser_id\x18\a \x01(\x04R\x06userId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\tR\tsessionIdB\x89\x01\n" +
+	"session_id\x18\b \x01(\tR\tsessionIdB\x89\x01\n" +
 	"\vcom.auth.v1B\tAuthProtoP\x01Z2github.com/jrmarcco/synp-api/api/go/auth/v1;authv1\xa2\x02\x03AXX\xaa\x02\aAuth.V1\xca\x02\aAuth\\V1\xe2\x02\x13Auth\\V1\\GPBMetadata\xea\x02\bAuth::V1b\x06proto3"
 
 var (

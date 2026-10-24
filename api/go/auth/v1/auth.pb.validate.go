@@ -57,7 +57,17 @@ func (m *JwtPayload) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for BizId
+	// no validation rules for Iss
+
+	// no validation rules for Aud
+
+	// no validation rules for Iat
+
+	// no validation rules for Exp
+
+	// no validation rules for Jti
+
+	// no validation rules for BusinessId
 
 	// no validation rules for UserId
 

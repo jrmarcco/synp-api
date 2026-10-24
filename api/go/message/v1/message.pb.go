@@ -10,6 +10,7 @@ import (
 	v1 "github.com/jrmarcco/synp-api/api/go/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -22,89 +23,45 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PushStatus int32
-
-const (
-	PushStatus_PUSH_STATUS_UNSPECIFIED     PushStatus = 0
-	PushStatus_PUSH_STATUS_SUCCESS         PushStatus = 1 // 成功
-	PushStatus_PUSH_STATUS_USER_OFFLINE    PushStatus = 2 // 用户离线
-	PushStatus_PUSH_STATUS_RATE_LIMITED    PushStatus = 3 // 限流
-	PushStatus_PUSH_STATUS_INVALID_MESSAGE PushStatus = 4 // 消息格式错误
-	PushStatus_PUSH_STATUS_INTERNAL_ERROR  PushStatus = 5 // 内部错误
-)
-
-// Enum value maps for PushStatus.
-var (
-	PushStatus_name = map[int32]string{
-		0: "PUSH_STATUS_UNSPECIFIED",
-		1: "PUSH_STATUS_SUCCESS",
-		2: "PUSH_STATUS_USER_OFFLINE",
-		3: "PUSH_STATUS_RATE_LIMITED",
-		4: "PUSH_STATUS_INVALID_MESSAGE",
-		5: "PUSH_STATUS_INTERNAL_ERROR",
-	}
-	PushStatus_value = map[string]int32{
-		"PUSH_STATUS_UNSPECIFIED":     0,
-		"PUSH_STATUS_SUCCESS":         1,
-		"PUSH_STATUS_USER_OFFLINE":    2,
-		"PUSH_STATUS_RATE_LIMITED":    3,
-		"PUSH_STATUS_INVALID_MESSAGE": 4,
-		"PUSH_STATUS_INTERNAL_ERROR":  5,
-	}
-)
-
-func (x PushStatus) Enum() *PushStatus {
-	p := new(PushStatus)
-	*p = x
-	return p
-}
-
-func (x PushStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (PushStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_message_v1_message_proto_enumTypes[0].Descriptor()
-}
-
-func (PushStatus) Type() protoreflect.EnumType {
-	return &file_message_v1_message_proto_enumTypes[0]
-}
-
-func (x PushStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use PushStatus.Descriptor instead.
-func (PushStatus) EnumDescriptor() ([]byte, []int) {
-	return file_message_v1_message_proto_rawDescGZIP(), []int{0}
-}
-
-// Message 是前端 ( 业务客户端 ) 和网关之间的通信消息。
+// Message 是前端 ( 业务客户端 ) 和网关之间的通信帧。
 type Message struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// 消息类型。
-	// 这里不使用 type 作为字段名是因为 type 在 go 里面是关键字。
+	// 帧类型。
+	// 不使用 type 作为字段名是因为 type 在 go 里面是关键字。
 	CommandType v1.CommandType `protobuf:"varint,1,opt,name=command_type,json=commandType,proto3,enum=common.v1.CommandType" json:"command_type,omitempty"`
-	// 由前端 ( 业务客户端 ) 生成，有 2 个作用:
+	// 帧标识，作用:
 	//
-	//	1.消息去重。
-	//	2.对 message_id 进行 hash，选择消息队列分区从而保证消息有序性。
+	//  1. 帧去重。整条链路按 at-least-once 语义处理，重复帧需靠 message_id 幂等消化。
 	//
-	// message_id 需要由前端生成 ( 建议使用 ULID )
+	//  2. 应答关联。*_ACK 帧回填对应请求帧的 message_id。
 	//
-	//	npm install ulid
-	//	或
-	//	yarn add ulid
+	//     由前端生成的帧 ( 建议使用 ULID ):
 	//
-	//	import { ulid } from 'ulid'
+	//     npm install ulid
+	//     或
+	//     yarn add ulid
 	//
-	//	const messageId = ulid()
+	//     import { ulid } from 'ulid'
 	//
-	//	// 也支持从时间戳生成
-	//	const messageId = ulid(Date.now())
+	//     const messageId = ulid()
+	//
+	//     // 也支持从时间戳生成
+	//     const messageId = ulid(Date.now())
+	//
+	//     服务端主动下发的帧 ( 如 NOTIFY ) 的 message_id 由服务端生成，仅用于日志排查。
 	MessageId string `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	// 消息体。
+	// 帧体，按 command_type 解释:
+	//
+	//	AUTH                    -> AuthPayload
+	//	AUTH_ACK                -> AuthAckPayload
+	//	UPSTREAM                -> 业务自定义 ( 原样进入 UpstreamMessage.body )
+	//	UPSTREAM_ACK            -> AckPayload
+	//	SYNC                    -> SyncFrame ( message/v1/sync.proto )
+	//	SYNC_ACK                -> SyncAckPayload ( message/v1/sync.proto )
+	//	CONVERSATION_SYNC       -> ConversationSyncFrame ( message/v1/sync.proto )
+	//	CONVERSATION_SYNC_ACK   -> ConversationSyncAckPayload ( message/v1/sync.proto )
+	//	NOTIFY                  -> NotifyPayload
+	//	HEARTBEAT / REDIRECT / RATE_LIMIT_EXCEEDED -> 空
 	Body          []byte `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -161,16 +118,117 @@ func (x *Message) GetBody() []byte {
 	return nil
 }
 
-// AckPayload 是消息确认的载荷，包含消息的处理结果。
-// 适用于上行消息和下行消息的 ACK 响应。
-// 当 Message.command_type = COMMAND_TYPE_ACK 时，该消息会被序列化到 Message.body 中。
+// AuthPayload 是 COMMAND_TYPE_AUTH 的 body。
+// 连接建立后的第一帧，未完成鉴权前网关拒绝处理其它指令。
+type AuthPayload struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 后端签发的 JWT，契约见 auth/v1/auth.proto。
+	Token         string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthPayload) Reset() {
+	*x = AuthPayload{}
+	mi := &file_message_v1_message_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthPayload) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthPayload) ProtoMessage() {}
+
+func (x *AuthPayload) ProtoReflect() protoreflect.Message {
+	mi := &file_message_v1_message_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthPayload.ProtoReflect.Descriptor instead.
+func (*AuthPayload) Descriptor() ([]byte, []int) {
+	return file_message_v1_message_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *AuthPayload) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+// AuthAckPayload 是 COMMAND_TYPE_AUTH_ACK 的 body。
+type AuthAckPayload struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Success bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// 仅在 success = false 时有值。
+	ErrorMessage  string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthAckPayload) Reset() {
+	*x = AuthAckPayload{}
+	mi := &file_message_v1_message_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthAckPayload) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthAckPayload) ProtoMessage() {}
+
+func (x *AuthAckPayload) ProtoReflect() protoreflect.Message {
+	mi := &file_message_v1_message_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthAckPayload.ProtoReflect.Descriptor instead.
+func (*AuthAckPayload) Descriptor() ([]byte, []int) {
+	return file_message_v1_message_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AuthAckPayload) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *AuthAckPayload) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+// AckPayload 是 COMMAND_TYPE_UPSTREAM_ACK 的 body。
+// 表示网关已接收该上行帧，不代表业务处理成功。
+// 业务层面的处理结果通过同步链路 ( NOTIFY -> SYNC ) 获得。
 type AckPayload struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// 消息处理是否成功。
+	// 网关是否接收该帧。
 	IsSuccess bool `protobuf:"varint,1,opt,name=is_success,json=isSuccess,proto3" json:"is_success,omitempty"`
-	// 服务端处理时间戳 ( 毫秒 )。
+	// 网关处理时间戳 ( 毫秒 )。
 	TimestampMs int64 `protobuf:"varint,2,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
-	// 错误信息（ 仅在 success = false 时有值 ）。
+	// 仅在 is_success = false 时有值。
 	ErrorMessage  string `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -178,7 +236,7 @@ type AckPayload struct {
 
 func (x *AckPayload) Reset() {
 	*x = AckPayload{}
-	mi := &file_message_v1_message_proto_msgTypes[1]
+	mi := &file_message_v1_message_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -190,7 +248,7 @@ func (x *AckPayload) String() string {
 func (*AckPayload) ProtoMessage() {}
 
 func (x *AckPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_message_v1_message_proto_msgTypes[1]
+	mi := &file_message_v1_message_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,7 +261,7 @@ func (x *AckPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AckPayload.ProtoReflect.Descriptor instead.
 func (*AckPayload) Descriptor() ([]byte, []int) {
-	return file_message_v1_message_proto_rawDescGZIP(), []int{1}
+	return file_message_v1_message_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AckPayload) GetIsSuccess() bool {
@@ -227,36 +285,32 @@ func (x *AckPayload) GetErrorMessage() string {
 	return ""
 }
 
-// PushMessage 是由后端 ( 业务服务端 ) 主动向网关发送的消息。
-// 通信方式为业务后端推送 PushMessage 到 Kafka 的指定 topic，由网关监听并消费。
-// 网关收到 PushMessage 后，
-// 会向前端发送 CommandType 为 COMMAND_TYPE_DOWNSTREAM 的 Message。
-type PushMessage struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	MessageId  string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	BusinessId uint64                 `protobuf:"varint,2,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
-	ReceiverId uint64                 `protobuf:"varint,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
-	// 消息体。
-	Body          []byte `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+// NotifyPayload 是 COMMAND_TYPE_NOTIFY 的 body。
+// 通知客户端其收件箱有新消息。客户端比较本地游标与 latest_seq，
+// 落后时发起 SYNC 拉取增量，否则忽略 ( 通知可能重复 )。
+type NotifyPayload struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 触发本次通知的收件箱序号 ( InboxEntry.seq，见 message/v1/sync.proto )。
+	LatestSeq     uint64 `protobuf:"varint,1,opt,name=latest_seq,json=latestSeq,proto3" json:"latest_seq,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PushMessage) Reset() {
-	*x = PushMessage{}
-	mi := &file_message_v1_message_proto_msgTypes[2]
+func (x *NotifyPayload) Reset() {
+	*x = NotifyPayload{}
+	mi := &file_message_v1_message_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PushMessage) String() string {
+func (x *NotifyPayload) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PushMessage) ProtoMessage() {}
+func (*NotifyPayload) ProtoMessage() {}
 
-func (x *PushMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_message_v1_message_proto_msgTypes[2]
+func (x *NotifyPayload) ProtoReflect() protoreflect.Message {
+	mi := &file_message_v1_message_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -267,223 +321,151 @@ func (x *PushMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PushMessage.ProtoReflect.Descriptor instead.
-func (*PushMessage) Descriptor() ([]byte, []int) {
-	return file_message_v1_message_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use NotifyPayload.ProtoReflect.Descriptor instead.
+func (*NotifyPayload) Descriptor() ([]byte, []int) {
+	return file_message_v1_message_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *PushMessage) GetMessageId() string {
+func (x *NotifyPayload) GetLatestSeq() uint64 {
+	if x != nil {
+		return x.LatestSeq
+	}
+	return 0
+}
+
+// UpstreamMessage 是网关投递到 Kafka 上行 topic 的记录。
+//
+// 身份字段由网关以连接鉴权 ( JWT ) 结果盖章，前端自报的身份一律不可信。
+//
+// 分区键: hash(business_id, user_id)。
+// 同一发送者的消息落在同一分区内有序，便于后端为相关收件箱串行分配 seq。
+type UpstreamMessage struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	MessageId string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	// 发送者身份，网关盖章。
+	BusinessId uint64 `protobuf:"varint,2,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
+	UserId     uint64 `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	SessionId  string `protobuf:"bytes,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	// 发送连接，用于业务侧追溯。
+	ConnectionId string `protobuf:"bytes,5,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	// 前端 UPSTREAM 帧的 body，原样转发，网关与后端均不解释。
+	Body []byte `protobuf:"bytes,6,opt,name=body,proto3" json:"body,omitempty"`
+	// 网关接收时间。
+	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpstreamMessage) Reset() {
+	*x = UpstreamMessage{}
+	mi := &file_message_v1_message_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpstreamMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpstreamMessage) ProtoMessage() {}
+
+func (x *UpstreamMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_message_v1_message_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpstreamMessage.ProtoReflect.Descriptor instead.
+func (*UpstreamMessage) Descriptor() ([]byte, []int) {
+	return file_message_v1_message_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UpstreamMessage) GetMessageId() string {
 	if x != nil {
 		return x.MessageId
 	}
 	return ""
 }
 
-func (x *PushMessage) GetBusinessId() uint64 {
+func (x *UpstreamMessage) GetBusinessId() uint64 {
 	if x != nil {
 		return x.BusinessId
 	}
 	return 0
 }
 
-func (x *PushMessage) GetReceiverId() uint64 {
+func (x *UpstreamMessage) GetUserId() uint64 {
 	if x != nil {
-		return x.ReceiverId
+		return x.UserId
 	}
 	return 0
 }
 
-func (x *PushMessage) GetBody() []byte {
+func (x *UpstreamMessage) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *UpstreamMessage) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return ""
+}
+
+func (x *UpstreamMessage) GetBody() []byte {
 	if x != nil {
 		return x.Body
 	}
 	return nil
 }
 
-type PushRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	Message *PushMessage           `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	// 是否应该在失败时重试。
-	ShouldRetry   bool `protobuf:"varint,2,opt,name=should_retry,json=shouldRetry,proto3" json:"should_retry,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PushRequest) Reset() {
-	*x = PushRequest{}
-	mi := &file_message_v1_message_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PushRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PushRequest) ProtoMessage() {}
-
-func (x *PushRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_message_v1_message_proto_msgTypes[3]
+func (x *UpstreamMessage) GetOccurredAt() *timestamppb.Timestamp {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PushRequest.ProtoReflect.Descriptor instead.
-func (*PushRequest) Descriptor() ([]byte, []int) {
-	return file_message_v1_message_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *PushRequest) GetMessage() *PushMessage {
-	if x != nil {
-		return x.Message
+		return x.OccurredAt
 	}
 	return nil
 }
 
-func (x *PushRequest) GetShouldRetry() bool {
-	if x != nil {
-		return x.ShouldRetry
-	}
-	return false
-}
-
-type PushResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        PushStatus             `protobuf:"varint,1,opt,name=status,proto3,enum=message.v1.PushStatus" json:"status,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+// NotifyMessage 是后端投递到 Kafka 通知 topic 的记录，
+// 由推送侧消费后转换为 COMMAND_TYPE_NOTIFY 帧下发，触发客户端同步。
+//
+// 注意它不携带消息本体 —— 消息本体只能通过同步链路获取。
+//
+// 分区键: hash(business_id, receiver_id)。
+type NotifyMessage struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	MessageId  string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	BusinessId uint64                 `protobuf:"varint,2,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
+	ReceiverId uint64                 `protobuf:"varint,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"`
+	// 收件人收件箱当前最大 seq。
+	LatestSeq     uint64 `protobuf:"varint,4,opt,name=latest_seq,json=latestSeq,proto3" json:"latest_seq,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PushResponse) Reset() {
-	*x = PushResponse{}
-	mi := &file_message_v1_message_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PushResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PushResponse) ProtoMessage() {}
-
-func (x *PushResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_message_v1_message_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PushResponse.ProtoReflect.Descriptor instead.
-func (*PushResponse) Descriptor() ([]byte, []int) {
-	return file_message_v1_message_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *PushResponse) GetStatus() PushStatus {
-	if x != nil {
-		return x.Status
-	}
-	return PushStatus_PUSH_STATUS_UNSPECIFIED
-}
-
-func (x *PushResponse) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
-type BatchPushRequest struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Messages []*PushMessage         `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
-	// 预留字段。
-	// 可选的回调地址 ( 用于结果通知 )。
-	CallbackUrl   string `protobuf:"bytes,2,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *BatchPushRequest) Reset() {
-	*x = BatchPushRequest{}
-	mi := &file_message_v1_message_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *BatchPushRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BatchPushRequest) ProtoMessage() {}
-
-func (x *BatchPushRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_message_v1_message_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BatchPushRequest.ProtoReflect.Descriptor instead.
-func (*BatchPushRequest) Descriptor() ([]byte, []int) {
-	return file_message_v1_message_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *BatchPushRequest) GetMessages() []*PushMessage {
-	if x != nil {
-		return x.Messages
-	}
-	return nil
-}
-
-func (x *BatchPushRequest) GetCallbackUrl() string {
-	if x != nil {
-		return x.CallbackUrl
-	}
-	return ""
-}
-
-// BatchPushResponse 批量推送响应。
-// 目前均为预留字段。
-type BatchPushResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	AcceptedCount int32                  `protobuf:"varint,2,opt,name=accepted_count,json=acceptedCount,proto3" json:"accepted_count,omitempty"`
-	RejectedCount int32                  `protobuf:"varint,3,opt,name=rejected_count,json=rejectedCount,proto3" json:"rejected_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *BatchPushResponse) Reset() {
-	*x = BatchPushResponse{}
+func (x *NotifyMessage) Reset() {
+	*x = NotifyMessage{}
 	mi := &file_message_v1_message_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BatchPushResponse) String() string {
+func (x *NotifyMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BatchPushResponse) ProtoMessage() {}
+func (*NotifyMessage) ProtoMessage() {}
 
-func (x *BatchPushResponse) ProtoReflect() protoreflect.Message {
+func (x *NotifyMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_message_v1_message_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -495,28 +477,35 @@ func (x *BatchPushResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BatchPushResponse.ProtoReflect.Descriptor instead.
-func (*BatchPushResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NotifyMessage.ProtoReflect.Descriptor instead.
+func (*NotifyMessage) Descriptor() ([]byte, []int) {
 	return file_message_v1_message_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *BatchPushResponse) GetTaskId() string {
+func (x *NotifyMessage) GetMessageId() string {
 	if x != nil {
-		return x.TaskId
+		return x.MessageId
 	}
 	return ""
 }
 
-func (x *BatchPushResponse) GetAcceptedCount() int32 {
+func (x *NotifyMessage) GetBusinessId() uint64 {
 	if x != nil {
-		return x.AcceptedCount
+		return x.BusinessId
 	}
 	return 0
 }
 
-func (x *BatchPushResponse) GetRejectedCount() int32 {
+func (x *NotifyMessage) GetReceiverId() uint64 {
 	if x != nil {
-		return x.RejectedCount
+		return x.ReceiverId
+	}
+	return 0
+}
+
+func (x *NotifyMessage) GetLatestSeq() uint64 {
+	if x != nil {
+		return x.LatestSeq
 	}
 	return 0
 }
@@ -526,50 +515,47 @@ var File_message_v1_message_proto protoreflect.FileDescriptor
 const file_message_v1_message_proto_rawDesc = "" +
 	"\n" +
 	"\x18message/v1/message.proto\x12\n" +
-	"message.v1\x1a\x15common/v1/types.proto\"w\n" +
+	"message.v1\x1a\x15common/v1/types.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"w\n" +
 	"\aMessage\x129\n" +
 	"\fcommand_type\x18\x01 \x01(\x0e2\x16.common.v1.CommandTypeR\vcommandType\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x02 \x01(\tR\tmessageId\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\fR\x04body\"s\n" +
+	"\x04body\x18\x03 \x01(\fR\x04body\"#\n" +
+	"\vAuthPayload\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"O\n" +
+	"\x0eAuthAckPayload\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"s\n" +
 	"\n" +
 	"AckPayload\x12\x1d\n" +
 	"\n" +
 	"is_success\x18\x01 \x01(\bR\tisSuccess\x12!\n" +
 	"\ftimestamp_ms\x18\x02 \x01(\x03R\vtimestampMs\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x82\x01\n" +
-	"\vPushMessage\x12\x1d\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\".\n" +
+	"\rNotifyPayload\x12\x1d\n" +
+	"\n" +
+	"latest_seq\x18\x01 \x01(\x04R\tlatestSeq\"\xff\x01\n" +
+	"\x0fUpstreamMessage\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1f\n" +
+	"\vbusiness_id\x18\x02 \x01(\x04R\n" +
+	"businessId\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\x04R\x06userId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x04 \x01(\tR\tsessionId\x12#\n" +
+	"\rconnection_id\x18\x05 \x01(\tR\fconnectionId\x12\x12\n" +
+	"\x04body\x18\x06 \x01(\fR\x04body\x12;\n" +
+	"\voccurred_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt\"\x8f\x01\n" +
+	"\rNotifyMessage\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1f\n" +
 	"\vbusiness_id\x18\x02 \x01(\x04R\n" +
 	"businessId\x12\x1f\n" +
 	"\vreceiver_id\x18\x03 \x01(\x04R\n" +
-	"receiverId\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\fR\x04body\"c\n" +
-	"\vPushRequest\x121\n" +
-	"\amessage\x18\x01 \x01(\v2\x17.message.v1.PushMessageR\amessage\x12!\n" +
-	"\fshould_retry\x18\x02 \x01(\bR\vshouldRetry\"c\n" +
-	"\fPushResponse\x12.\n" +
-	"\x06status\x18\x01 \x01(\x0e2\x16.message.v1.PushStatusR\x06status\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"j\n" +
-	"\x10BatchPushRequest\x123\n" +
-	"\bmessages\x18\x01 \x03(\v2\x17.message.v1.PushMessageR\bmessages\x12!\n" +
-	"\fcallback_url\x18\x02 \x01(\tR\vcallbackUrl\"z\n" +
-	"\x11BatchPushResponse\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12%\n" +
-	"\x0eaccepted_count\x18\x02 \x01(\x05R\racceptedCount\x12%\n" +
-	"\x0erejected_count\x18\x03 \x01(\x05R\rrejectedCount*\xbf\x01\n" +
+	"receiverId\x12\x1d\n" +
 	"\n" +
-	"PushStatus\x12\x1b\n" +
-	"\x17PUSH_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
-	"\x13PUSH_STATUS_SUCCESS\x10\x01\x12\x1c\n" +
-	"\x18PUSH_STATUS_USER_OFFLINE\x10\x02\x12\x1c\n" +
-	"\x18PUSH_STATUS_RATE_LIMITED\x10\x03\x12\x1f\n" +
-	"\x1bPUSH_STATUS_INVALID_MESSAGE\x10\x04\x12\x1e\n" +
-	"\x1aPUSH_STATUS_INTERNAL_ERROR\x10\x052\x92\x01\n" +
-	"\vPushService\x129\n" +
-	"\x04Push\x12\x17.message.v1.PushRequest\x1a\x18.message.v1.PushResponse\x12H\n" +
-	"\tBatchPush\x12\x1c.message.v1.BatchPushRequest\x1a\x1d.message.v1.BatchPushResponseB\xa1\x01\n" +
+	"latest_seq\x18\x04 \x01(\x04R\tlatestSeqB\xa1\x01\n" +
 	"\x0ecom.message.v1B\fMessageProtoP\x01Z8github.com/jrmarcco/synp-api/api/go/message/v1;messagev1\xa2\x02\x03MXX\xaa\x02\n" +
 	"Message.V1\xca\x02\n" +
 	"Message\\V1\xe2\x02\x16Message\\V1\\GPBMetadata\xea\x02\vMessage::V1b\x06proto3"
@@ -586,33 +572,26 @@ func file_message_v1_message_proto_rawDescGZIP() []byte {
 	return file_message_v1_message_proto_rawDescData
 }
 
-var file_message_v1_message_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_message_v1_message_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_message_v1_message_proto_goTypes = []any{
-	(PushStatus)(0),           // 0: message.v1.PushStatus
-	(*Message)(nil),           // 1: message.v1.Message
-	(*AckPayload)(nil),        // 2: message.v1.AckPayload
-	(*PushMessage)(nil),       // 3: message.v1.PushMessage
-	(*PushRequest)(nil),       // 4: message.v1.PushRequest
-	(*PushResponse)(nil),      // 5: message.v1.PushResponse
-	(*BatchPushRequest)(nil),  // 6: message.v1.BatchPushRequest
-	(*BatchPushResponse)(nil), // 7: message.v1.BatchPushResponse
-	(v1.CommandType)(0),       // 8: common.v1.CommandType
+	(*Message)(nil),               // 0: message.v1.Message
+	(*AuthPayload)(nil),           // 1: message.v1.AuthPayload
+	(*AuthAckPayload)(nil),        // 2: message.v1.AuthAckPayload
+	(*AckPayload)(nil),            // 3: message.v1.AckPayload
+	(*NotifyPayload)(nil),         // 4: message.v1.NotifyPayload
+	(*UpstreamMessage)(nil),       // 5: message.v1.UpstreamMessage
+	(*NotifyMessage)(nil),         // 6: message.v1.NotifyMessage
+	(v1.CommandType)(0),           // 7: common.v1.CommandType
+	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
 }
 var file_message_v1_message_proto_depIdxs = []int32{
-	8, // 0: message.v1.Message.command_type:type_name -> common.v1.CommandType
-	3, // 1: message.v1.PushRequest.message:type_name -> message.v1.PushMessage
-	0, // 2: message.v1.PushResponse.status:type_name -> message.v1.PushStatus
-	3, // 3: message.v1.BatchPushRequest.messages:type_name -> message.v1.PushMessage
-	4, // 4: message.v1.PushService.Push:input_type -> message.v1.PushRequest
-	6, // 5: message.v1.PushService.BatchPush:input_type -> message.v1.BatchPushRequest
-	5, // 6: message.v1.PushService.Push:output_type -> message.v1.PushResponse
-	7, // 7: message.v1.PushService.BatchPush:output_type -> message.v1.BatchPushResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	7, // 0: message.v1.Message.command_type:type_name -> common.v1.CommandType
+	8, // 1: message.v1.UpstreamMessage.occurred_at:type_name -> google.protobuf.Timestamp
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_message_v1_message_proto_init() }
@@ -625,14 +604,13 @@ func file_message_v1_message_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_message_v1_message_proto_rawDesc), len(file_message_v1_message_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   7,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   0,
 		},
 		GoTypes:           file_message_v1_message_proto_goTypes,
 		DependencyIndexes: file_message_v1_message_proto_depIdxs,
-		EnumInfos:         file_message_v1_message_proto_enumTypes,
 		MessageInfos:      file_message_v1_message_proto_msgTypes,
 	}.Build()
 	File_message_v1_message_proto = out.File

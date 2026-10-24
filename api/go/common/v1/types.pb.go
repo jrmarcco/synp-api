@@ -22,47 +22,79 @@ const (
 )
 
 // 消息的指令类型。
+//
+// 指令分组约定:
+//   - 客户端发起的指令 ( AUTH / UPSTREAM / SYNC / CONVERSATION_SYNC )
+//     都有对应的 *_ACK 应答指令，通过 Message.message_id 关联。
+//   - NOTIFY 由服务端主动下发，用于触发客户端同步，没有对应的请求帧。
 type CommandType int32
 
 const (
 	CommandType_COMMAND_TYPE_UNSPECIFIED CommandType = 0
-	// 心跳指令。
+	// 心跳指令: frontend -> gateway。
 	CommandType_COMMAND_TYPE_HEARTBEAT CommandType = 1
-	// 上行消息:  frontend -> gateway -> backend。
-	CommandType_COMMAND_TYPE_UPSTREAM CommandType = 2
-	// 上行消息 ack: gateway -> frontend。
-	CommandType_COMMAND_TYPE_UPSTREAM_ACK CommandType = 3
-	// 下行消息: backend -> gateway -> frontend。
-	CommandType_COMMAND_TYPE_DOWNSTREAM CommandType = 4
-	// 下行消息: frontend -> gateway。
-	CommandType_COMMAND_TYPE_DOWNSTREAM_ACK CommandType = 5
-	// 重定向指令。
-	CommandType_COMMAND_TYPE_REDIRECT CommandType = 6
-	// 限流指令：gateway -> frontend。
-	CommandType_COMMAND_TYPE_RATE_LIMIT_EXCEEDED CommandType = 7
+	// 鉴权指令: frontend -> gateway。
+	// 连接建立后的第一帧，携带后端签发的 JWT。
+	CommandType_COMMAND_TYPE_AUTH CommandType = 2
+	// 鉴权应答: gateway -> frontend。
+	// 失败时网关在发送应答后关闭连接。
+	CommandType_COMMAND_TYPE_AUTH_ACK CommandType = 3
+	// 上行消息: frontend -> gateway -> backend ( 经 Kafka )。
+	CommandType_COMMAND_TYPE_UPSTREAM CommandType = 4
+	// 上行消息回执: gateway -> frontend。
+	// 仅表示网关已接收该帧，不代表业务处理成功。
+	// 业务层面的处理结果通过同步链路 ( NOTIFY -> SYNC ) 获得。
+	CommandType_COMMAND_TYPE_UPSTREAM_ACK CommandType = 5
+	// 收件箱增量同步请求: frontend -> gateway。
+	// 网关以连接身份调用后端 SyncService.Sync，并以 SYNC_ACK 应答。
+	CommandType_COMMAND_TYPE_SYNC CommandType = 6
+	// 收件箱增量同步应答: gateway -> frontend。
+	CommandType_COMMAND_TYPE_SYNC_ACK CommandType = 7
+	// 会话增量同步请求: frontend -> gateway。
+	// 用于读扩散 ( 大群 ) 场景拉取会话 timeline。
+	CommandType_COMMAND_TYPE_CONVERSATION_SYNC CommandType = 8
+	// 会话增量同步应答: gateway -> frontend。
+	CommandType_COMMAND_TYPE_CONVERSATION_SYNC_ACK CommandType = 9
+	// 同步通知: backend -> gateway -> frontend。
+	// 通知用户收件箱有新消息，客户端比对游标后决定是否发起 SYNC。
+	CommandType_COMMAND_TYPE_NOTIFY CommandType = 10
+	// 重定向指令: gateway -> frontend。
+	CommandType_COMMAND_TYPE_REDIRECT CommandType = 11
+	// 限流指令: gateway -> frontend。
+	CommandType_COMMAND_TYPE_RATE_LIMIT_EXCEEDED CommandType = 12
 )
 
 // Enum value maps for CommandType.
 var (
 	CommandType_name = map[int32]string{
-		0: "COMMAND_TYPE_UNSPECIFIED",
-		1: "COMMAND_TYPE_HEARTBEAT",
-		2: "COMMAND_TYPE_UPSTREAM",
-		3: "COMMAND_TYPE_UPSTREAM_ACK",
-		4: "COMMAND_TYPE_DOWNSTREAM",
-		5: "COMMAND_TYPE_DOWNSTREAM_ACK",
-		6: "COMMAND_TYPE_REDIRECT",
-		7: "COMMAND_TYPE_RATE_LIMIT_EXCEEDED",
+		0:  "COMMAND_TYPE_UNSPECIFIED",
+		1:  "COMMAND_TYPE_HEARTBEAT",
+		2:  "COMMAND_TYPE_AUTH",
+		3:  "COMMAND_TYPE_AUTH_ACK",
+		4:  "COMMAND_TYPE_UPSTREAM",
+		5:  "COMMAND_TYPE_UPSTREAM_ACK",
+		6:  "COMMAND_TYPE_SYNC",
+		7:  "COMMAND_TYPE_SYNC_ACK",
+		8:  "COMMAND_TYPE_CONVERSATION_SYNC",
+		9:  "COMMAND_TYPE_CONVERSATION_SYNC_ACK",
+		10: "COMMAND_TYPE_NOTIFY",
+		11: "COMMAND_TYPE_REDIRECT",
+		12: "COMMAND_TYPE_RATE_LIMIT_EXCEEDED",
 	}
 	CommandType_value = map[string]int32{
-		"COMMAND_TYPE_UNSPECIFIED":         0,
-		"COMMAND_TYPE_HEARTBEAT":           1,
-		"COMMAND_TYPE_UPSTREAM":            2,
-		"COMMAND_TYPE_UPSTREAM_ACK":        3,
-		"COMMAND_TYPE_DOWNSTREAM":          4,
-		"COMMAND_TYPE_DOWNSTREAM_ACK":      5,
-		"COMMAND_TYPE_REDIRECT":            6,
-		"COMMAND_TYPE_RATE_LIMIT_EXCEEDED": 7,
+		"COMMAND_TYPE_UNSPECIFIED":           0,
+		"COMMAND_TYPE_HEARTBEAT":             1,
+		"COMMAND_TYPE_AUTH":                  2,
+		"COMMAND_TYPE_AUTH_ACK":              3,
+		"COMMAND_TYPE_UPSTREAM":              4,
+		"COMMAND_TYPE_UPSTREAM_ACK":          5,
+		"COMMAND_TYPE_SYNC":                  6,
+		"COMMAND_TYPE_SYNC_ACK":              7,
+		"COMMAND_TYPE_CONVERSATION_SYNC":     8,
+		"COMMAND_TYPE_CONVERSATION_SYNC_ACK": 9,
+		"COMMAND_TYPE_NOTIFY":                10,
+		"COMMAND_TYPE_REDIRECT":              11,
+		"COMMAND_TYPE_RATE_LIMIT_EXCEEDED":   12,
 	}
 )
 
@@ -93,74 +125,26 @@ func (CommandType) EnumDescriptor() ([]byte, []int) {
 	return file_common_v1_types_proto_rawDescGZIP(), []int{0}
 }
 
-// 目的地频道类型。
-type DestinationType int32
-
-const (
-	DestinationType_DESTINATION_TYPE_UNSPECIFIED DestinationType = 0
-	DestinationType_DESTINATION_TYPE_SINGLE      DestinationType = 1
-	DestinationType_DESTINATION_TYPE_GROUP       DestinationType = 2
-)
-
-// Enum value maps for DestinationType.
-var (
-	DestinationType_name = map[int32]string{
-		0: "DESTINATION_TYPE_UNSPECIFIED",
-		1: "DESTINATION_TYPE_SINGLE",
-		2: "DESTINATION_TYPE_GROUP",
-	}
-	DestinationType_value = map[string]int32{
-		"DESTINATION_TYPE_UNSPECIFIED": 0,
-		"DESTINATION_TYPE_SINGLE":      1,
-		"DESTINATION_TYPE_GROUP":       2,
-	}
-)
-
-func (x DestinationType) Enum() *DestinationType {
-	p := new(DestinationType)
-	*p = x
-	return p
-}
-
-func (x DestinationType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (DestinationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_v1_types_proto_enumTypes[1].Descriptor()
-}
-
-func (DestinationType) Type() protoreflect.EnumType {
-	return &file_common_v1_types_proto_enumTypes[1]
-}
-
-func (x DestinationType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use DestinationType.Descriptor instead.
-func (DestinationType) EnumDescriptor() ([]byte, []int) {
-	return file_common_v1_types_proto_rawDescGZIP(), []int{1}
-}
-
 var File_common_v1_types_proto protoreflect.FileDescriptor
 
 const file_common_v1_types_proto_rawDesc = "" +
 	"\n" +
-	"\x15common/v1/types.proto\x12\tcommon.v1*\x80\x02\n" +
+	"\x15common/v1/types.proto\x12\tcommon.v1*\x8b\x03\n" +
 	"\vCommandType\x12\x1c\n" +
 	"\x18COMMAND_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
-	"\x16COMMAND_TYPE_HEARTBEAT\x10\x01\x12\x19\n" +
-	"\x15COMMAND_TYPE_UPSTREAM\x10\x02\x12\x1d\n" +
-	"\x19COMMAND_TYPE_UPSTREAM_ACK\x10\x03\x12\x1b\n" +
-	"\x17COMMAND_TYPE_DOWNSTREAM\x10\x04\x12\x1f\n" +
-	"\x1bCOMMAND_TYPE_DOWNSTREAM_ACK\x10\x05\x12\x19\n" +
-	"\x15COMMAND_TYPE_REDIRECT\x10\x06\x12$\n" +
-	" COMMAND_TYPE_RATE_LIMIT_EXCEEDED\x10\a*l\n" +
-	"\x0fDestinationType\x12 \n" +
-	"\x1cDESTINATION_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
-	"\x17DESTINATION_TYPE_SINGLE\x10\x01\x12\x1a\n" +
-	"\x16DESTINATION_TYPE_GROUP\x10\x02B\x98\x01\n" +
+	"\x16COMMAND_TYPE_HEARTBEAT\x10\x01\x12\x15\n" +
+	"\x11COMMAND_TYPE_AUTH\x10\x02\x12\x19\n" +
+	"\x15COMMAND_TYPE_AUTH_ACK\x10\x03\x12\x19\n" +
+	"\x15COMMAND_TYPE_UPSTREAM\x10\x04\x12\x1d\n" +
+	"\x19COMMAND_TYPE_UPSTREAM_ACK\x10\x05\x12\x15\n" +
+	"\x11COMMAND_TYPE_SYNC\x10\x06\x12\x19\n" +
+	"\x15COMMAND_TYPE_SYNC_ACK\x10\a\x12\"\n" +
+	"\x1eCOMMAND_TYPE_CONVERSATION_SYNC\x10\b\x12&\n" +
+	"\"COMMAND_TYPE_CONVERSATION_SYNC_ACK\x10\t\x12\x17\n" +
+	"\x13COMMAND_TYPE_NOTIFY\x10\n" +
+	"\x12\x19\n" +
+	"\x15COMMAND_TYPE_REDIRECT\x10\v\x12$\n" +
+	" COMMAND_TYPE_RATE_LIMIT_EXCEEDED\x10\fB\x98\x01\n" +
 	"\rcom.common.v1B\n" +
 	"TypesProtoP\x01Z6github.com/jrmarcco/synp-api/api/go/common/v1;commonv1\xa2\x02\x03CXX\xaa\x02\tCommon.V1\xca\x02\tCommon\\V1\xe2\x02\x15Common\\V1\\GPBMetadata\xea\x02\n" +
 	"Common::V1b\x06proto3"
@@ -177,10 +161,9 @@ func file_common_v1_types_proto_rawDescGZIP() []byte {
 	return file_common_v1_types_proto_rawDescData
 }
 
-var file_common_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_common_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_common_v1_types_proto_goTypes = []any{
-	(CommandType)(0),     // 0: common.v1.CommandType
-	(DestinationType)(0), // 1: common.v1.DestinationType
+	(CommandType)(0), // 0: common.v1.CommandType
 }
 var file_common_v1_types_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -200,7 +183,7 @@ func file_common_v1_types_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_v1_types_proto_rawDesc), len(file_common_v1_types_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   0,

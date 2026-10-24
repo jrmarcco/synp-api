@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+package message.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// ==================== 客户端 -> 网关: 同步请求帧 ====================
+
+// SyncFrame 是 COMMAND_TYPE_SYNC 的 body。
+// 不含任何身份字段: 网关以连接鉴权得到的身份盖章后再调用 SyncService。
+message SyncFrame {
+  // 本端已应用的最大收件箱 seq。
+  // 首次同步 ( 或新设备 ) 传 0，服务端从保留窗口内最早的条目开始返回。
+  uint64 cursor = 1;
+
+  // 单页条数上限，0 表示使用服务端默认值。
+  uint32 limit = 2;
+}
+
+// ConversationSyncFrame 是 COMMAND_TYPE_CONVERSATION_SYNC 的 body。
+message ConversationSyncFrame {
+  string conversation_id = 1;
+
+  // 本端已应用的该会话最大 conversation seq，首次同步传 0。
+  uint64 cursor = 2;
+
+  // 单页条数上限，0 表示使用服务端默认值。
+  uint32 limit = 3;
+}
+
+// ==================== 网关 -> 后端: 同步服务 ====================
+
+// SyncService 由后端 ( 业务服务端 ) 实现，网关在收到同步帧后调用。
+// 请求中的身份字段一律由网关盖章，客户端填写的身份不可信。
+service SyncService {
+  // Sync 返回该用户收件箱中 ( cursor, 服务端最大 seq ] 的增量条目。
+  rpc Sync(SyncRequest) returns (SyncResponse);
+
+  // ConversationSync 返回指定会话 timeline 的增量消息，用于读扩散 ( 大群 ) 场景。
+  // 服务端必须校验请求用户是否为该会话成员。
+  rpc ConversationSync(ConversationSyncRequest) returns (ConversationSyncResponse);
+}
+
+message SyncRequest {
+  // 以下身份字段由网关盖章。
+  uint64 business_id = 1;
+  uint64 user_id = 2;
+
+  // 客户端已应用的最大收件箱 seq。
+  uint64 cursor = 3;
+
+  uint32 limit = 4;
+}
+
+message SyncResponse {
+  // 按 seq 升序返回 ( cursor, latest_seq ] 内的条目，可能因 limit 截断。
+  repeated InboxEntry entries = 1;
+
+  // 服务端收件箱当前最大 seq。
+  uint64 latest_seq = 2;
+
+  // 是否还有未返回的增量。为 true 时客户端应携带新游标继续翻页。
+  bool has_more = 3;
+
+  // cursor 早于服务端保留窗口时为 true。
+  // 此时返回的条目从保留窗口内最早的 seq 开始，与 cursor 之间存在缺口，
+  // 客户端应重置本地消息数据后重新同步。
+  bool cursor_expired = 4;
+}
+
+// InboxEntry 是用户收件箱中的一条同步条目。
+// 收件箱 seq 在 ( business_id, user_id ) 维度上由后端严格单调递增地分配。
+message InboxEntry {
+  // 该条目在收件人收件箱中的序号，客户端以此去重并推进游标。
+  uint64 seq = 1;
+
+  oneof kind {
+    // 写扩散条目 ( 单聊/小群 ): 消息本体内联，一次 SYNC 即可渲染。
+    ChatMessage message = 2;
+
+    // 读扩散指针 ( 大群 ): 会话有更新，需再发起 CONVERSATION_SYNC 拉取正文。
+    ConversationUpdate conversation_update = 3;
+  }
+}
+
+// ChatMessage 是同步链路下发的消息本体。
+message ChatMessage {
+  string conversation_id = 1;
+  string message_id = 2;
+  uint64 sender_id = 3;
+
+  // 业务消息体，与发送者 UPSTREAM 帧的 body 一致，网关与后端均不解释。
+  bytes body = 4;
+
+  // 后端落库时间。
+  google.protobuf.Timestamp sent_at = 5;
+}
+
+// ConversationUpdate 是读扩散会话在收件箱中的轻量指针。
+message ConversationUpdate {
+  string conversation_id = 1;
+
+  // 该会话 timeline 当前最大 seq。
+  uint64 conversation_latest_seq = 2;
+}
+
+message ConversationSyncRequest {
+  // 以下身份字段由网关盖章。
+  uint64 business_id = 1;
+  uint64 user_id = 2;
+
+  string conversation_id = 3;
+
+  // 客户端已应用的该会话最大 seq。
+  uint64 cursor = 4;
+
+  uint32 limit = 5;
+}
+
+message ConversationSyncResponse {
+  // 按 conversation_seq 升序返回 ( cursor, latest_seq ] 内的消息。
+  repeated TimelineMessage messages = 1;
+
+  // 会话 timeline 当前最大 seq。
+  uint64 latest_seq = 2;
+
+  // 是否还有未返回的增量。为 true 时客户端应携带新游标继续翻页。
+  bool has_more = 3;
+}
+
+// TimelineMessage 是会话 timeline 中的一条消息。
+message TimelineMessage {
+  // 该消息在会话 timeline 内的序号，会话维度由后端单调递增分配。
+  uint64 conversation_seq = 1;
+
+  ChatMessage message = 2;
+}
+
+// ==================== 网关 -> 客户端: 同步应答帧 ====================
+
+// SyncAckPayload 是 COMMAND_TYPE_SYNC_ACK 的 body。
+message SyncAckPayload {
+  bool is_success = 1;
+
+  // 仅在 is_success = false 时有值。
+  string error_message = 2;
+
+  // 仅在 is_success = true 时有值。
+  SyncResponse response = 3;
+}
+
+// ConversationSyncAckPayload 是 COMMAND_TYPE_CONVERSATION_SYNC_ACK 的 body。
+message ConversationSyncAckPayload {
+  bool is_success = 1;
+
+  // 仅在 is_success = false 时有值。
+  string error_message = 2;
+
+  // 仅在 is_success = true 时有值。
+  ConversationSyncResponse response = 3;
+}

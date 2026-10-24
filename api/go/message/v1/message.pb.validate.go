@@ -143,6 +143,211 @@ var _ interface {
 	ErrorName() string
 } = MessageValidationError{}
 
+// Validate checks the field values on AuthPayload with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *AuthPayload) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AuthPayload with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in AuthPayloadMultiError, or
+// nil if none found.
+func (m *AuthPayload) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AuthPayload) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Token
+
+	if len(errors) > 0 {
+		return AuthPayloadMultiError(errors)
+	}
+
+	return nil
+}
+
+// AuthPayloadMultiError is an error wrapping multiple validation errors
+// returned by AuthPayload.ValidateAll() if the designated constraints aren't met.
+type AuthPayloadMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AuthPayloadMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AuthPayloadMultiError) AllErrors() []error { return m }
+
+// AuthPayloadValidationError is the validation error returned by
+// AuthPayload.Validate if the designated constraints aren't met.
+type AuthPayloadValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AuthPayloadValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AuthPayloadValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AuthPayloadValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AuthPayloadValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AuthPayloadValidationError) ErrorName() string { return "AuthPayloadValidationError" }
+
+// Error satisfies the builtin error interface
+func (e AuthPayloadValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAuthPayload.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AuthPayloadValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AuthPayloadValidationError{}
+
+// Validate checks the field values on AuthAckPayload with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *AuthAckPayload) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AuthAckPayload with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in AuthAckPayloadMultiError,
+// or nil if none found.
+func (m *AuthAckPayload) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AuthAckPayload) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	// no validation rules for ErrorMessage
+
+	if len(errors) > 0 {
+		return AuthAckPayloadMultiError(errors)
+	}
+
+	return nil
+}
+
+// AuthAckPayloadMultiError is an error wrapping multiple validation errors
+// returned by AuthAckPayload.ValidateAll() if the designated constraints
+// aren't met.
+type AuthAckPayloadMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AuthAckPayloadMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AuthAckPayloadMultiError) AllErrors() []error { return m }
+
+// AuthAckPayloadValidationError is the validation error returned by
+// AuthAckPayload.Validate if the designated constraints aren't met.
+type AuthAckPayloadValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AuthAckPayloadValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AuthAckPayloadValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AuthAckPayloadValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AuthAckPayloadValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AuthAckPayloadValidationError) ErrorName() string { return "AuthAckPayloadValidationError" }
+
+// Error satisfies the builtin error interface
+func (e AuthAckPayloadValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAuthAckPayload.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AuthAckPayloadValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AuthAckPayloadValidationError{}
+
 // Validate checks the field values on AckPayload with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -248,22 +453,265 @@ var _ interface {
 	ErrorName() string
 } = AckPayloadValidationError{}
 
-// Validate checks the field values on PushMessage with the rules defined in
+// Validate checks the field values on NotifyPayload with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
-func (m *PushMessage) Validate() error {
+func (m *NotifyPayload) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on PushMessage with the rules defined in
-// the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in PushMessageMultiError, or
+// ValidateAll checks the field values on NotifyPayload with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in NotifyPayloadMultiError, or
 // nil if none found.
-func (m *PushMessage) ValidateAll() error {
+func (m *NotifyPayload) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *PushMessage) validate(all bool) error {
+func (m *NotifyPayload) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for LatestSeq
+
+	if len(errors) > 0 {
+		return NotifyPayloadMultiError(errors)
+	}
+
+	return nil
+}
+
+// NotifyPayloadMultiError is an error wrapping multiple validation errors
+// returned by NotifyPayload.ValidateAll() if the designated constraints
+// aren't met.
+type NotifyPayloadMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m NotifyPayloadMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m NotifyPayloadMultiError) AllErrors() []error { return m }
+
+// NotifyPayloadValidationError is the validation error returned by
+// NotifyPayload.Validate if the designated constraints aren't met.
+type NotifyPayloadValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e NotifyPayloadValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e NotifyPayloadValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e NotifyPayloadValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e NotifyPayloadValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e NotifyPayloadValidationError) ErrorName() string { return "NotifyPayloadValidationError" }
+
+// Error satisfies the builtin error interface
+func (e NotifyPayloadValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sNotifyPayload.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = NotifyPayloadValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = NotifyPayloadValidationError{}
+
+// Validate checks the field values on UpstreamMessage with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *UpstreamMessage) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpstreamMessage with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpstreamMessageMultiError, or nil if none found.
+func (m *UpstreamMessage) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpstreamMessage) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for MessageId
+
+	// no validation rules for BusinessId
+
+	// no validation rules for UserId
+
+	// no validation rules for SessionId
+
+	// no validation rules for ConnectionId
+
+	// no validation rules for Body
+
+	if all {
+		switch v := interface{}(m.GetOccurredAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpstreamMessageValidationError{
+					field:  "OccurredAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpstreamMessageValidationError{
+					field:  "OccurredAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetOccurredAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpstreamMessageValidationError{
+				field:  "OccurredAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpstreamMessageMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpstreamMessageMultiError is an error wrapping multiple validation errors
+// returned by UpstreamMessage.ValidateAll() if the designated constraints
+// aren't met.
+type UpstreamMessageMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpstreamMessageMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpstreamMessageMultiError) AllErrors() []error { return m }
+
+// UpstreamMessageValidationError is the validation error returned by
+// UpstreamMessage.Validate if the designated constraints aren't met.
+type UpstreamMessageValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpstreamMessageValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpstreamMessageValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpstreamMessageValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpstreamMessageValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpstreamMessageValidationError) ErrorName() string { return "UpstreamMessageValidationError" }
+
+// Error satisfies the builtin error interface
+func (e UpstreamMessageValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpstreamMessage.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpstreamMessageValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpstreamMessageValidationError{}
+
+// Validate checks the field values on NotifyMessage with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *NotifyMessage) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on NotifyMessage with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in NotifyMessageMultiError, or
+// nil if none found.
+func (m *NotifyMessage) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *NotifyMessage) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -276,390 +724,22 @@ func (m *PushMessage) validate(all bool) error {
 
 	// no validation rules for ReceiverId
 
-	// no validation rules for Body
+	// no validation rules for LatestSeq
 
 	if len(errors) > 0 {
-		return PushMessageMultiError(errors)
+		return NotifyMessageMultiError(errors)
 	}
 
 	return nil
 }
 
-// PushMessageMultiError is an error wrapping multiple validation errors
-// returned by PushMessage.ValidateAll() if the designated constraints aren't met.
-type PushMessageMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m PushMessageMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m PushMessageMultiError) AllErrors() []error { return m }
-
-// PushMessageValidationError is the validation error returned by
-// PushMessage.Validate if the designated constraints aren't met.
-type PushMessageValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e PushMessageValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e PushMessageValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e PushMessageValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e PushMessageValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e PushMessageValidationError) ErrorName() string { return "PushMessageValidationError" }
-
-// Error satisfies the builtin error interface
-func (e PushMessageValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sPushMessage.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = PushMessageValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = PushMessageValidationError{}
-
-// Validate checks the field values on PushRequest with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *PushRequest) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on PushRequest with the rules defined in
-// the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in PushRequestMultiError, or
-// nil if none found.
-func (m *PushRequest) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *PushRequest) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	if all {
-		switch v := interface{}(m.GetMessage()).(type) {
-		case interface{ ValidateAll() error }:
-			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, PushRequestValidationError{
-					field:  "Message",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		case interface{ Validate() error }:
-			if err := v.Validate(); err != nil {
-				errors = append(errors, PushRequestValidationError{
-					field:  "Message",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		}
-	} else if v, ok := interface{}(m.GetMessage()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return PushRequestValidationError{
-				field:  "Message",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
-	// no validation rules for ShouldRetry
-
-	if len(errors) > 0 {
-		return PushRequestMultiError(errors)
-	}
-
-	return nil
-}
-
-// PushRequestMultiError is an error wrapping multiple validation errors
-// returned by PushRequest.ValidateAll() if the designated constraints aren't met.
-type PushRequestMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m PushRequestMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m PushRequestMultiError) AllErrors() []error { return m }
-
-// PushRequestValidationError is the validation error returned by
-// PushRequest.Validate if the designated constraints aren't met.
-type PushRequestValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e PushRequestValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e PushRequestValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e PushRequestValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e PushRequestValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e PushRequestValidationError) ErrorName() string { return "PushRequestValidationError" }
-
-// Error satisfies the builtin error interface
-func (e PushRequestValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sPushRequest.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = PushRequestValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = PushRequestValidationError{}
-
-// Validate checks the field values on PushResponse with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *PushResponse) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on PushResponse with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in PushResponseMultiError, or
-// nil if none found.
-func (m *PushResponse) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *PushResponse) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	// no validation rules for Status
-
-	// no validation rules for ErrorMessage
-
-	if len(errors) > 0 {
-		return PushResponseMultiError(errors)
-	}
-
-	return nil
-}
-
-// PushResponseMultiError is an error wrapping multiple validation errors
-// returned by PushResponse.ValidateAll() if the designated constraints aren't met.
-type PushResponseMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m PushResponseMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m PushResponseMultiError) AllErrors() []error { return m }
-
-// PushResponseValidationError is the validation error returned by
-// PushResponse.Validate if the designated constraints aren't met.
-type PushResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e PushResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e PushResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e PushResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e PushResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e PushResponseValidationError) ErrorName() string { return "PushResponseValidationError" }
-
-// Error satisfies the builtin error interface
-func (e PushResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sPushResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = PushResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = PushResponseValidationError{}
-
-// Validate checks the field values on BatchPushRequest with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// first error encountered is returned, or nil if there are no violations.
-func (m *BatchPushRequest) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on BatchPushRequest with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the result is a list of violation errors wrapped in
-// BatchPushRequestMultiError, or nil if none found.
-func (m *BatchPushRequest) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *BatchPushRequest) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	for idx, item := range m.GetMessages() {
-		_, _ = idx, item
-
-		if all {
-			switch v := interface{}(item).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, BatchPushRequestValidationError{
-						field:  fmt.Sprintf("Messages[%v]", idx),
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, BatchPushRequestValidationError{
-						field:  fmt.Sprintf("Messages[%v]", idx),
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return BatchPushRequestValidationError{
-					field:  fmt.Sprintf("Messages[%v]", idx),
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	}
-
-	// no validation rules for CallbackUrl
-
-	if len(errors) > 0 {
-		return BatchPushRequestMultiError(errors)
-	}
-
-	return nil
-}
-
-// BatchPushRequestMultiError is an error wrapping multiple validation errors
-// returned by BatchPushRequest.ValidateAll() if the designated constraints
+// NotifyMessageMultiError is an error wrapping multiple validation errors
+// returned by NotifyMessage.ValidateAll() if the designated constraints
 // aren't met.
-type BatchPushRequestMultiError []error
+type NotifyMessageMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m BatchPushRequestMultiError) Error() string {
+func (m NotifyMessageMultiError) Error() string {
 	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -668,11 +748,11 @@ func (m BatchPushRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m BatchPushRequestMultiError) AllErrors() []error { return m }
+func (m NotifyMessageMultiError) AllErrors() []error { return m }
 
-// BatchPushRequestValidationError is the validation error returned by
-// BatchPushRequest.Validate if the designated constraints aren't met.
-type BatchPushRequestValidationError struct {
+// NotifyMessageValidationError is the validation error returned by
+// NotifyMessage.Validate if the designated constraints aren't met.
+type NotifyMessageValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -680,22 +760,22 @@ type BatchPushRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e BatchPushRequestValidationError) Field() string { return e.field }
+func (e NotifyMessageValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e BatchPushRequestValidationError) Reason() string { return e.reason }
+func (e NotifyMessageValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e BatchPushRequestValidationError) Cause() error { return e.cause }
+func (e NotifyMessageValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e BatchPushRequestValidationError) Key() bool { return e.key }
+func (e NotifyMessageValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e BatchPushRequestValidationError) ErrorName() string { return "BatchPushRequestValidationError" }
+func (e NotifyMessageValidationError) ErrorName() string { return "NotifyMessageValidationError" }
 
 // Error satisfies the builtin error interface
-func (e BatchPushRequestValidationError) Error() string {
+func (e NotifyMessageValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -707,14 +787,14 @@ func (e BatchPushRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sBatchPushRequest.%s: %s%s",
+		"invalid %sNotifyMessage.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = BatchPushRequestValidationError{}
+var _ error = NotifyMessageValidationError{}
 
 var _ interface {
 	Field() string
@@ -722,112 +802,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = BatchPushRequestValidationError{}
-
-// Validate checks the field values on BatchPushResponse with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// first error encountered is returned, or nil if there are no violations.
-func (m *BatchPushResponse) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on BatchPushResponse with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the result is a list of violation errors wrapped in
-// BatchPushResponseMultiError, or nil if none found.
-func (m *BatchPushResponse) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *BatchPushResponse) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	// no validation rules for TaskId
-
-	// no validation rules for AcceptedCount
-
-	// no validation rules for RejectedCount
-
-	if len(errors) > 0 {
-		return BatchPushResponseMultiError(errors)
-	}
-
-	return nil
-}
-
-// BatchPushResponseMultiError is an error wrapping multiple validation errors
-// returned by BatchPushResponse.ValidateAll() if the designated constraints
-// aren't met.
-type BatchPushResponseMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m BatchPushResponseMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m BatchPushResponseMultiError) AllErrors() []error { return m }
-
-// BatchPushResponseValidationError is the validation error returned by
-// BatchPushResponse.Validate if the designated constraints aren't met.
-type BatchPushResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e BatchPushResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e BatchPushResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e BatchPushResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e BatchPushResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e BatchPushResponseValidationError) ErrorName() string {
-	return "BatchPushResponseValidationError"
-}
-
-// Error satisfies the builtin error interface
-func (e BatchPushResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sBatchPushResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = BatchPushResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = BatchPushResponseValidationError{}
+} = NotifyMessageValidationError{}
