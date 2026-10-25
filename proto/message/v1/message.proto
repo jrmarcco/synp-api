@@ -29,6 +29,8 @@ message Message {
   //  const messageId = ulid(Date.now())
   //
   //  服务端主动下发的帧 ( 如 NOTIFY ) 的 message_id 由服务端生成，仅用于日志排查。
+  //  NOTIFY 帧每次下发独立生成新 ID，不复用触发消息的 UPSTREAM 帧 ID——
+  //  客户端不可用 NOTIFY.messageId 做帧关联或消息去重 ( 去重按 latest_seq / seq )。
   string message_id = 2;
 
   // 帧体，按 command_type 解释:

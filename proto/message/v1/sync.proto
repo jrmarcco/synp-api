@@ -86,6 +86,9 @@ message InboxEntry {
 // ChatMessage 是同步链路下发的消息本体。
 message ChatMessage {
   string conversation_id = 1;
+
+  // 发送端 UPSTREAM 帧的 message_id ( 网关帧 ID )，
+  // 与 body 内业务自定义的 id 字段无关；多端合并 pending 消息按此关联。
   string message_id = 2;
   uint64 sender_id = 3;
 

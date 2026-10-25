@@ -41,6 +41,9 @@ message JwtPayload {
 
   // ===== 业务 claims =====
 
+  // business_id / user_id 在 token payload JSON 中以十进制字符串序列化
+  // ( 如 "user_id":"134605228232032256" ): JS Number 无法无损承载
+  // 超过 2^53-1 的 int64。解析侧需同时兼容数字字面量 ( 历史存量 token )。
   uint64 business_id = 6;
 
   uint64 user_id = 7;
