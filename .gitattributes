@@ -1,0 +1,12 @@
+# 统一换行策略：
+#   文本文件仓库内一律 LF，检出时不做转换。
+#   跨 Linux / macOS / Windows 协作时行为一致，不依赖各人的 core.autocrlf 配置。
+* text=auto eol=lf
+
+# 二进制文件不做任何转换
+*.png binary
+*.jpg binary
+*.ico binary
+*.icns binary
+*.exe binary
+*.dmg binary
